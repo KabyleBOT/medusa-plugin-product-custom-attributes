@@ -75,9 +75,14 @@ class ProductService extends MedusaProductService {
 			manager.withRepository(
 				this.productRepository_
 			);
+
 		const intAttributeValueRepo =
 			manager.withRepository(
 				this.intAttributeValueRepository
+			);
+		const attributeValueRepo =
+			manager.withRepository(
+				this.attributeValueRepository_
 			);
 		const product =
 			await productRepo.findOneBy({
@@ -104,19 +109,28 @@ class ProductService extends MedusaProductService {
 						2
 					)}`
 				);
+				const isIntAttribute =
+					attributeType ===
+					"int attribute values";
 				const promisedValues =
 					attributesToUpdate.map(
 						async (v) => {
-							const attribute =
-								await attributeRepo.findOneBy(
-									{
-										id: v?.attribute_id,
-									}
-								);
+							const { attribute } =
+								!isIntAttribute
+									? await attributeValueRepo.findOneBy(
+											{
+												id: v?.id,
+											}
+									  )
+									: await intAttributeValueRepo.findOneBy(
+											{
+												id: v?.id,
+											}
+									  );
 
 							if (!attribute) {
 								throw new Error(
-									`Attribute with id ${v?.attribute_id} not found.`
+									`Attribute with for value with id ${v?.id} not found.`
 								);
 							}
 
@@ -126,10 +140,7 @@ class ProductService extends MedusaProductService {
 								attribute,
 							];
 
-							if (
-								attributeType ===
-								"int attribute values"
-							) {
+							if (isIntAttribute) {
 								const toCreate =
 									intAttributeValueRepo.create(
 										{
