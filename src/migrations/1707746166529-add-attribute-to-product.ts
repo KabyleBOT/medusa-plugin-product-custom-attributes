@@ -11,20 +11,25 @@ export class AddAttributeToProduct1707746166529
 	): Promise<void> {
 		await queryRunner.query(`
             CREATE TABLE "product_attributes_attribute" (
-                "productId" character varying NOT NULL,
-                "attributeId" character varying NOT NULL,
-                CONSTRAINT "PK_product_attribute" PRIMARY KEY ("productId", "attributeId")
+                "productId" character varying,
+                "attributeId" character varying,
             )
         `);
 
 		await queryRunner.query(`
             ALTER TABLE "product_attributes_attribute"
-            ADD CONSTRAINT "FK_product_id" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE CASCADE
+            ADD CONSTRAINT "FK_product_attributes_attribute_attribute" 
+            FOREIGN KEY ("intAttributeValueId") 
+            REFERENCES "attribute"("id") 
+            ON DELETE CASCADE;
         `);
 
 		await queryRunner.query(`
             ALTER TABLE "product_attributes_attribute"
-            ADD CONSTRAINT "FK_attribute_id" FOREIGN KEY ("attributeId") REFERENCES "attribute"("id") ON DELETE CASCADE
+            ADD CONSTRAINT "FK_product_attributes_attribute_product" 
+            FOREIGN KEY ("productId") 
+            REFERENCES "product"("id") 
+            ON DELETE CASCADE;
         `);
 	}
 
