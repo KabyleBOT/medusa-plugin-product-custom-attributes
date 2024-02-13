@@ -39,7 +39,6 @@ export class Attribute extends BaseEntity {
 		() => Product,
 		(product) => product.attributes
 	)
-	@JoinTable()
 	products: Product[];
 
 	@OneToMany(

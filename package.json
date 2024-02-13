@@ -1,6 +1,6 @@
 {
 	"name": "medusa-custom-attributes-ghilas",
-	"version": "1.0.31",
+	"version": "1.0.32",
 	"description": "Custom attributes plugin for Medusa for ghilas",
 	"main": "index.js",
 	"author": "Khaled Belkouche <khaled.belkouche@assalas.com>",
