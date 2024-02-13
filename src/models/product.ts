@@ -10,10 +10,7 @@ import { IntAttributeValue } from "./int-attribute-value";
 
 @Entity()
 export class Product extends MedusaProduct {
-	@ManyToMany(
-		() => Attribute,
-		(attribute) => attribute.products
-	)
+	@ManyToMany(() => Attribute)
 	@JoinTable()
 	attributes: Attribute[];
 
