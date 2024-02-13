@@ -117,7 +117,8 @@ class ProductService extends MedusaProductService {
 							}
 
 							product.attributes = [
-								...product.attributes,
+								...(product?.attributes ||
+									[]),
 								attribute,
 							];
 							await productRepo.save(
