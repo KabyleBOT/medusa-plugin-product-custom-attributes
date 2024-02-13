@@ -199,8 +199,6 @@ class ProductService extends MedusaProductService {
 		const collectionAlias =
 			"collection";
 		const tagsAlias = "tags";
-		const attributesAlias =
-			"attributes";
 
 		if (
 			"description" in option_.where
@@ -256,10 +254,6 @@ class ProductService extends MedusaProductService {
 				`${productAlias}.collection`,
 				`${collectionAlias}`
 			)
-			.leftJoinAndSelect(
-				`${productAlias}.attributes`,
-				`${attributesAlias}`
-			)
 			.select([`${productAlias}.id`])
 			.where(option_.where)
 			.skip(option_.skip)
@@ -302,6 +296,15 @@ class ProductService extends MedusaProductService {
 		}
 
 		if (attributes) {
+			qb.leftJoinAndSelect(
+				`${productAlias}.attributes`,
+				"attributes"
+			);
+			qb.leftJoinAndSelect(
+				`attributes.values`,
+				"values"
+			);
+			////////////////////////////////
 			qb.leftJoinAndSelect(
 				`${productAlias}.attribute_values`,
 				"attribute_values"
