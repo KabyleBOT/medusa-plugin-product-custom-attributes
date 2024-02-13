@@ -15,12 +15,14 @@ import { FindWithoutRelationsOptions } from "@medusajs/medusa/dist/repositories/
 import { applyOrdering } from "@medusajs/medusa/dist/utils/repository";
 import { cloneDeep } from "lodash";
 import { Brackets } from "typeorm";
+import { Logger } from "@medusajs/medusa";
 
 type InjectedDependencies = {
 	productRepository: typeof ProductRepository;
 	attributeValueRepository: typeof AttributeValueRepository;
 	intAttributeValueRepository: typeof IntAttributeValueRepository;
 	attributeRepository: typeof AttributeRepository;
+	logger: Logger;
 };
 
 type AttributesArgument = {
@@ -55,33 +57,114 @@ class ProductService extends MedusaProductService {
 				string,
 				any
 			>[];
+			attribute_values?: Record<
+				string,
+				any
+			>[];
 		}
 	) {
+		const logger =
+			this.container.logger;
 		const manager = this.activeManager_;
+
+		const attributeRepo =
+			manager.withRepository(
+				this.attributeRepository_
+			);
+		const productRepo =
+			manager.withRepository(
+				this.productRepository_
+			);
 		const intAttributeValueRepo =
 			manager.withRepository(
 				this.intAttributeValueRepository
 			);
+		const product =
+			await productRepo.findOneBy({
+				id: productId,
+			});
 
-		if (update.int_attribute_values) {
-			update.int_attribute_values =
-				update.int_attribute_values.map(
-					(v) => {
-						const toCreate =
-							intAttributeValueRepo.create(
-								{
-									id: v.id,
-									value: v.value,
-									attribute: {
-										id: v.attribute_id,
-									},
-								}
+		if (!product) {
+			throw new Error(
+				`Product with id ${productId} not found.`
+			);
+		}
+
+		const updateAttributes = async (
+			attributesToUpdate:
+				| Record<string, any>[]
+				| undefined,
+			attributeType: string
+		) => {
+			if (attributesToUpdate) {
+				logger.info(
+					`Updating product ${productId} with ${attributeType}:${attributesToUpdate}`
+				);
+				const promisedValues =
+					attributesToUpdate.map(
+						async (v) => {
+							const attribute =
+								await attributeRepo.findOneBy(
+									{
+										id: v?.attribute_id,
+									}
+								);
+
+							if (!attribute) {
+								throw new Error(
+									`Attribute with id ${v?.attribute_id} not found.`
+								);
+							}
+
+							product.attributes = [
+								...product.attributes,
+								attribute,
+							];
+							await productRepo.save(
+								product
 							);
 
-						return toCreate;
-					}
+							if (
+								attributeType ===
+								"int attribute values"
+							) {
+								const toCreate =
+									intAttributeValueRepo.create(
+										{
+											id: v.id,
+											value: v.value,
+											attribute: {
+												id: v.attribute_id,
+											},
+										}
+									);
+
+								return toCreate;
+							}
+
+							return v;
+						}
+					);
+				return await Promise.all(
+					promisedValues
 				);
-		}
+			}
+		};
+
+		update.attribute_values =
+			await updateAttributes(
+				update.attribute_values,
+				"attribute values"
+			);
+		update.int_attribute_values =
+			await updateAttributes(
+				update.int_attribute_values,
+				"int attribute values"
+			);
+
+		logger.info(
+			`Updating product ${productId} with update:${update}`
+		);
 
 		return await super.update(
 			productId,
@@ -105,11 +188,6 @@ class ProductService extends MedusaProductService {
 		const productRepo =
 			manager.withRepository(
 				this.productRepository_
-			);
-
-		const attributeRepo =
-			manager.withRepository(
-				this.attributeRepository_
 			);
 
 		const attributesArg = {
@@ -178,36 +256,6 @@ class ProductService extends MedusaProductService {
 				products
 			);
 		}
-		const productPromises: Promise<Product>[] =
-			products.map(async (product) => {
-				// loop attributes where each attribute is an attributeId
-				for (const attributeId of selector.attributes) {
-					const attribute =
-						await attributeRepo.findOneBy(
-							{
-								id: attributeId,
-							}
-						);
-
-					if (attribute) {
-						// igonre ts
-						// @ts-expect-error
-						product?.attributes = [
-							// @ts-expect-error
-							...product?.attributes,
-							attribute,
-						];
-						await productRepo.save(
-							product
-						);
-						return product;
-					}
-				}
-			});
-
-		products = await Promise.all(
-			productPromises
-		);
 
 		return [products, count];
 	}
