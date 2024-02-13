@@ -8,6 +8,7 @@ import {
 } from "@medusajs/medusa/dist/types/product";
 import AttributeValueRepository from "../repositories/attribute-value";
 import IntAttributeValueRepository from "../repositories/int-attribute-value";
+import AttributeRepository from "../repositories/attribute";
 import { IntAttributeParam } from "../api";
 import { MedusaV2Flag } from "@medusajs/utils";
 import { FindWithoutRelationsOptions } from "@medusajs/medusa/dist/repositories/product";
@@ -19,6 +20,7 @@ type InjectedDependencies = {
 	productRepository: typeof ProductRepository;
 	attributeValueRepository: typeof AttributeValueRepository;
 	intAttributeValueRepository: typeof IntAttributeValueRepository;
+	attributeRepository: typeof AttributeRepository;
 };
 
 type AttributesArgument = {
@@ -30,6 +32,7 @@ class ProductService extends MedusaProductService {
 	protected readonly productRepository_: typeof ProductRepository;
 	protected readonly intAttributeValueRepository: typeof IntAttributeValueRepository;
 	protected readonly attributeValueRepository_: typeof AttributeValueRepository;
+	protected readonly attributeRepository_: typeof AttributeRepository;
 
 	constructor(
 		private readonly container: InjectedDependencies
@@ -41,6 +44,8 @@ class ProductService extends MedusaProductService {
 			container.attributeValueRepository;
 		this.intAttributeValueRepository =
 			container.intAttributeValueRepository;
+		this.attributeRepository_ =
+			container.attributeRepository;
 	}
 
 	async update(
@@ -100,6 +105,11 @@ class ProductService extends MedusaProductService {
 		const productRepo =
 			manager.withRepository(
 				this.productRepository_
+			);
+
+		const attributeRepo =
+			manager.withRepository(
+				this.attributeRepository_
 			);
 
 		const attributesArg = {
@@ -168,6 +178,36 @@ class ProductService extends MedusaProductService {
 				products
 			);
 		}
+		const productPromises: Promise<Product>[] =
+			products.map(async (product) => {
+				// loop attributes where each attribute is an attributeId
+				for (const attributeId of selector.attributes) {
+					const attribute =
+						await attributeRepo.findOneBy(
+							{
+								id: attributeId,
+							}
+						);
+
+					if (attribute) {
+						// igonre ts
+						// @ts-expect-error
+						product?.attributes = [
+							// @ts-expect-error
+							...product?.attributes,
+							attribute,
+						];
+						await productRepo.save(
+							product
+						);
+						return product;
+					}
+				}
+			});
+
+		products = await Promise.all(
+			productPromises
+		);
 
 		return [products, count];
 	}
@@ -296,15 +336,6 @@ class ProductService extends MedusaProductService {
 		}
 
 		if (attributes) {
-			qb.leftJoinAndSelect(
-				`${productAlias}.attributes`,
-				"attributes"
-			);
-			qb.leftJoinAndSelect(
-				`attributes.values`,
-				"values"
-			);
-			////////////////////////////////
 			qb.leftJoinAndSelect(
 				`${productAlias}.attribute_values`,
 				"attribute_values"
