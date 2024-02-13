@@ -98,7 +98,11 @@ class ProductService extends MedusaProductService {
 		) => {
 			if (attributesToUpdate) {
 				logger.info(
-					`Updating product ${productId} with ${attributeType}:${attributesToUpdate}`
+					`Updating product ${productId} with ${attributeType}:${JSON.stringify(
+						attributesToUpdate,
+						null,
+						2
+					)}`
 				);
 				const promisedValues =
 					attributesToUpdate.map(
@@ -164,7 +168,11 @@ class ProductService extends MedusaProductService {
 			);
 
 		logger.info(
-			`Updating product ${productId} with update:${update}`
+			`Updating product ${productId} with update:${JSON.stringify(
+				update,
+				null,
+				2
+			)}`
 		);
 
 		return await super.update(
