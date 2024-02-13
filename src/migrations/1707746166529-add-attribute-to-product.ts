@@ -10,7 +10,7 @@ export class AddAttributeToProduct1707746166529
 		queryRunner: QueryRunner
 	): Promise<void> {
 		await queryRunner.query(`
-            CREATE TABLE "product_attribute" (
+            CREATE TABLE "product_attributes_attribute" (
                 "productId" character varying NOT NULL,
                 "attributeId" character varying NOT NULL,
                 CONSTRAINT "PK_product_attribute" PRIMARY KEY ("productId", "attributeId")
@@ -18,12 +18,12 @@ export class AddAttributeToProduct1707746166529
         `);
 
 		await queryRunner.query(`
-            ALTER TABLE "product_attribute"
+            ALTER TABLE "product_attributes_attribute"
             ADD CONSTRAINT "FK_product_id" FOREIGN KEY ("productId") REFERENCES "product"("id") ON DELETE CASCADE
         `);
 
 		await queryRunner.query(`
-            ALTER TABLE "product_attribute"
+            ALTER TABLE "product_attributes_attribute"
             ADD CONSTRAINT "FK_attribute_id" FOREIGN KEY ("attributeId") REFERENCES "attribute"("id") ON DELETE CASCADE
         `);
 	}
@@ -32,7 +32,7 @@ export class AddAttributeToProduct1707746166529
 		queryRunner: QueryRunner
 	): Promise<void> {
 		await queryRunner.query(
-			`DROP TABLE "product_attribute"`
+			`DROP TABLE "product_attributes_attribute"`
 		);
 	}
 }
