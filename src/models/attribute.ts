@@ -35,8 +35,10 @@ export class Attribute extends BaseEntity {
 	})
 	type: AttributeType;
 
-	@ManyToMany(() => Product)
-	@JoinTable()
+	@ManyToMany(
+		() => Product,
+		(product) => product.attributes
+	)
 	products: Product[];
 
 	@OneToMany(

@@ -11,7 +11,17 @@ import { IntAttributeValue } from "./int-attribute-value";
 @Entity()
 export class Product extends MedusaProduct {
 	@ManyToMany(() => Attribute)
-	@JoinTable()
+	@JoinTable({
+		name: "product_attributes_attribute", // name of the table that we created in the migration
+		joinColumn: {
+			name: "productId", // field that represents Product entity in the join table
+			referencedColumnName: "id",
+		},
+		inverseJoinColumn: {
+			name: "attributeId", // field that represents Attribute entity in the join table
+			referencedColumnName: "id",
+		},
+	})
 	attributes: Attribute[];
 
 	@ManyToMany(() => AttributeValue)
