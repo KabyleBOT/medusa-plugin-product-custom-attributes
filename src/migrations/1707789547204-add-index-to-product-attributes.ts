@@ -10,10 +10,10 @@ export class AddIndexToProductAttributes1707789547204
 		queryRunner: QueryRunner
 	): Promise<void> {
 		await queryRunner.query(`
-      CREATE INDEX "IDX_product_attributes_attribute_productId" ON "product_attributes_attribute" ("productId")
+      CREATE INDEX "IDX_product_attributes_attribute_products_productId" ON "product_attributes_attribute_products" ("productId")
     `);
 		await queryRunner.query(`
-      CREATE INDEX "IDX_product_attributes_attribute_attributeId" ON "product_attributes_attribute" ("attributeId")
+      CREATE INDEX "IDX_product_attributes_attribute_products_attributeId" ON "product_attributes_attribute_products" ("attributeId")
     `);
 	}
 
@@ -21,10 +21,10 @@ export class AddIndexToProductAttributes1707789547204
 		queryRunner: QueryRunner
 	): Promise<void> {
 		await queryRunner.query(`
-            DROP INDEX "IDX_product_attributes_attribute_productId";
+            DROP INDEX "IDX_product_attributes_attribute_products_productId";
         `);
 		await queryRunner.query(`
-            DROP INDEX "IDX_product_attributes_attribute_attributeId";
+            DROP INDEX "IDX_product_attributes_attribute_products_attributeId";
         `);
 	}
 }
