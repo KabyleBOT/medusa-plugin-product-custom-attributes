@@ -125,9 +125,6 @@ class ProductService extends MedusaProductService {
 									[]),
 								attribute,
 							];
-							await productRepo.save(
-								product
-							);
 
 							if (
 								attributeType ===
@@ -166,6 +163,8 @@ class ProductService extends MedusaProductService {
 				update.int_attribute_values,
 				"int attribute values"
 			);
+
+		await productRepo.save(product);
 
 		logger.info(
 			`Updating product ${productId} with update:${JSON.stringify(
