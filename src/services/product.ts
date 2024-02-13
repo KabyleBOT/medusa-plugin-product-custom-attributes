@@ -67,10 +67,6 @@ class ProductService extends MedusaProductService {
 			this.container.logger;
 		const manager = this.activeManager_;
 
-		const attributeRepo =
-			manager.withRepository(
-				this.attributeRepository_
-			);
 		const productRepo =
 			manager.withRepository(
 				this.productRepository_
@@ -117,20 +113,42 @@ class ProductService extends MedusaProductService {
 						async (v) => {
 							const { attribute } =
 								!isIntAttribute
-									? await attributeValueRepo.findOneBy(
+									? await attributeValueRepo.findOne(
 											{
-												id: v?.id,
+												where: {
+													id: v.id,
+												},
+												join: {
+													alias:
+														"attribute_value",
+													leftJoinAndSelect:
+														{
+															attribute:
+																"attribute_value.attribute",
+														},
+												},
 											}
 									  )
-									: await intAttributeValueRepo.findOneBy(
+									: await intAttributeValueRepo.findOne(
 											{
-												id: v?.id,
+												where: {
+													id: v.id,
+												},
+												join: {
+													alias:
+														"int_attribute_value",
+													leftJoinAndSelect:
+														{
+															attribute:
+																"int_attribute_value.attribute",
+														},
+												},
 											}
 									  );
 
 							if (!attribute) {
 								throw new Error(
-									`Attribute with for value with id ${v?.id} not found.`
+									`Attribute with value with id ${v?.id} not found.`
 								);
 							}
 
