@@ -8,10 +8,10 @@ export default async function () {
 			// "attribute_values",
 			"attributes",
 			// "attribute_values.attribute",
-			"attributes.attribute_values",
+			"attributes.values",
 			// "int_attribute_values",
 			// "int_attribute_values.attribute",
-			"attributes.int_attribute_values",
+			"attributes.int_values",
 		];
 	imports.defaultStoreProductsRelations =
 		[
@@ -19,9 +19,9 @@ export default async function () {
 			// "attribute_values",
 			"attributes",
 			// "attribute_values.attribute",
-			"attributes.attribute_values",
-			"int_attribute_values",
+			"attributes.values",
+			// "int_attribute_values",
 			// "int_attribute_values.attribute",
-			"attributes.int_attribute_values",
+			"attributes.int_values",
 		];
 }
