@@ -147,10 +147,10 @@ class ProductService extends MedusaProductService {
 							delete attribute?.int_values;
 
 							if (
-								!product.attributes.some(
+								!product?.attributes?.some(
 									(existingAttribute) =>
-										existingAttribute.id ===
-										attribute.id
+										existingAttribute?.id ===
+										attribute?.id
 								)
 							) {
 								product.attributes = [
@@ -164,11 +164,18 @@ class ProductService extends MedusaProductService {
 								(attribute) => {
 									//  check if actual attribute containe attributeValue by id
 									//  if not add it to the attribute
+									let values =
+										isIntAttribute
+											? attribute?.int_values ||
+											  []
+											: attribute?.values ||
+											  [];
+
 									if (
-										!attribute.values.some(
+										values?.some(
 											(existingValue) =>
-												existingValue.id ===
-												v.id
+												existingValue?.id ===
+												v?.id
 										)
 									) {
 										if (
@@ -176,13 +183,13 @@ class ProductService extends MedusaProductService {
 										) {
 											attribute.values =
 												[
-													...attribute.values,
+													...attribute?.values,
 													attributeValue as AttributeValue,
 												];
 										} else {
 											attribute.int_values =
 												[
-													...attribute.int_values,
+													...attribute?.int_values,
 													attributeValue as IntAttributeValue,
 												];
 										}
