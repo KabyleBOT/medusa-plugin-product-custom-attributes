@@ -173,11 +173,6 @@ const CustomAttributes = ({
 				return { id: it.id };
 			});
 
-		console.log({
-			attribute_values,
-			int_attribute_values,
-			attributes: attributesIds,
-		});
 		mutate({
 			// @ts-ignore
 			attribute_values,
