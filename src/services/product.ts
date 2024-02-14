@@ -350,9 +350,9 @@ class ProductService extends MedusaProductService {
 				qb.leftJoinAndSelect(
 					"attributes.values",
 					"product_attribute_values"
-				).where(
+				).andWhere(
 					// select values that have a relationship to product
-					`values.productId = ${productAlias}.id`
+					`product_attribute_values.productId = ${productAlias}.id`
 				);
 			}
 			if (
@@ -361,9 +361,9 @@ class ProductService extends MedusaProductService {
 				qb.leftJoinAndSelect(
 					"attributes.int_values",
 					"product_int_values"
-				).where(
+				).andWhere(
 					// select values that have a relationship to product
-					`values.productId = ${productAlias}.id`
+					`product_int_values.productId = ${productAlias}.id`
 				);
 			}
 		}
