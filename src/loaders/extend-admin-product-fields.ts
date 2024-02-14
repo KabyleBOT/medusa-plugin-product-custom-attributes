@@ -11,6 +11,8 @@ export default async function (
 			"attribute_values.attribute",
 			"int_attribute_values",
 			"int_attribute_values.attribute",
+			"attributes",
+			"attributes.values",
 		];
 	imports.defaultAdminProductRemoteQueryObject =
 		{
@@ -23,10 +25,6 @@ export default async function (
 				relation:
 					"int_attribute_values",
 				fields: ["value"],
-			},
-			attributes: {
-				relation: "attributes",
-				fields: ["id"],
 			},
 		};
 }
