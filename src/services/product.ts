@@ -16,8 +16,6 @@ import { applyOrdering } from "@medusajs/medusa/dist/utils/repository";
 import { cloneDeep } from "lodash";
 import { Brackets } from "typeorm";
 import { Logger } from "@medusajs/medusa";
-// import { IntAttributeValue } from "../models/int-attribute-value";
-// import { AttributeValue } from "../models/attribute-value";
 
 type InjectedDependencies = {
 	productRepository: typeof ProductRepository;
@@ -102,13 +100,6 @@ class ProductService extends MedusaProductService {
 				attributeValueType: string
 			) => {
 				if (attributesValuesToUse) {
-					logger.info(
-						`Updating product ${productId} with ${attributeValueType}:${JSON.stringify(
-							attributesValuesToUse,
-							null,
-							2
-						)}`
-					);
 					const isIntAttribute =
 						attributeValueType ===
 						"int attribute values";
@@ -139,84 +130,11 @@ class ProductService extends MedusaProductService {
 				}
 			};
 
-		// const getAttributeIdByValues =
-		// 	async (
-		// 		attributesValuesToUse:
-		// 			| Record<string, any>[]
-		// 			| undefined,
-		// 		attributeValueType: string
-		// 	) => {
-		// 		if (attributesValuesToUse) {
-		// 			logger.info(
-		// 				`Updating product ${productId} with ${attributeValueType}:${JSON.stringify(
-		// 					attributesValuesToUse,
-		// 					null,
-		// 					2
-		// 				)}`
-		// 			);
-		// 			const isIntAttribute =
-		// 				attributeValueType ===
-		// 				"int attribute values";
-		// 			const promisedValues =
-		// 				attributesValuesToUse.map(
-		// 					async (v) => {
-		// 						const generalAttributeRepo =
-		// 							isIntAttribute
-		// 								? this
-		// 										.intAttributeValueRepository
-		// 								: this
-		// 										.attributeValueRepository_;
-		// 						const attributeValue =
-		// 							await generalAttributeRepo.findOne(
-		// 								{
-		// 									where: {
-		// 										id: v.id,
-		// 									},
-		// 									join: {
-		// 										alias:
-		// 											"general_attribute_value",
-		// 										leftJoinAndSelect:
-		// 											{
-		// 												attribute:
-		// 													"general_attribute_value.attribute",
-		// 											},
-		// 									},
-		// 								}
-		// 							);
-
-		// 						let attribute =
-		// 							attributeValue?.attribute;
-
-		// 						if (!attribute) {
-		// 							throw new Error(
-		// 								`Attribute with value with id ${v?.id} not found.`
-		// 							);
-		// 						}
-
-		// 						return attribute;
-		// 					}
-		// 				);
-		// 			return await Promise.all(
-		// 				promisedValues
-		// 			);
-		// 		}
-		// 	};
-
 		update.int_attribute_values =
 			await updateAttributeValues(
 				update.int_attribute_values,
 				"int attribute values"
 			);
-
-		// await productRepo.save(product);
-
-		logger.info(
-			`Updating product ${productId} with update:${JSON.stringify(
-				update,
-				null,
-				2
-			)}`
-		);
 
 		return await super.update(
 			productId,
@@ -277,17 +195,24 @@ class ProductService extends MedusaProductService {
 		let count: number;
 		let products: Product[];
 
+		const hasAttributesValuesRelation =
+			config.relations?.includes(
+				"attributes.values"
+			);
+
 		if (
 			q ||
 			attributesArg.attributes ||
-			attributesArg.int_attributes
+			attributesArg.int_attributes ||
+			hasAttributesValuesRelation
 		) {
 			[products, count] =
 				await this.getResultsAndCountWithAttributes(
 					q,
 					query,
 					relations,
-					attributesArg
+					attributesArg,
+					hasAttributesValuesRelation
 				);
 		} else {
 			[products, count] =
@@ -324,7 +249,8 @@ class ProductService extends MedusaProductService {
 		{
 			attributes,
 			int_attributes,
-		}: AttributesArgument = {}
+		}: AttributesArgument = {},
+		hasAttributesValuesRelation = false
 	): Promise<[Product[], number]> {
 		const manager = this.activeManager_;
 		const productRepo =
@@ -398,6 +324,34 @@ class ProductService extends MedusaProductService {
 			.where(option_.where)
 			.skip(option_.skip)
 			.take(option_.take);
+
+		if (hasAttributesValuesRelation) {
+			qb.leftJoinAndSelect(
+				`${productAlias}.attributes`,
+				"attributes"
+			)
+				.leftJoinAndSelect(
+					"attributes.values",
+					"values"
+				)
+				.andWhere(
+					// select values that have a relationship to product
+					`values.productId = ${productAlias}.id`
+				);
+
+			qb.leftJoinAndSelect(
+				`${productAlias}.attributes`,
+				"attributes"
+			)
+				.leftJoinAndSelect(
+					"attributes.int_values",
+					"intvalues"
+				)
+				.andWhere(
+					// select values that have a relationship to product
+					`int_values.productId = ${productAlias}.id`
+				);
+		}
 
 		if (q) {
 			qb.andWhere(
