@@ -16,8 +16,8 @@ import { applyOrdering } from "@medusajs/medusa/dist/utils/repository";
 import { cloneDeep } from "lodash";
 import { Brackets } from "typeorm";
 import { Logger } from "@medusajs/medusa";
-import { IntAttributeValue } from "../models/int-attribute-value";
-import { AttributeValue } from "../models/attribute-value";
+// import { IntAttributeValue } from "../models/int-attribute-value";
+// import { AttributeValue } from "../models/attribute-value";
 
 type InjectedDependencies = {
 	productRepository: typeof ProductRepository;
@@ -63,6 +63,10 @@ class ProductService extends MedusaProductService {
 				string,
 				any
 			>[];
+			attributes?: Record<
+				string,
+				any
+			>[];
 		}
 	) {
 		const logger =
@@ -90,149 +94,121 @@ class ProductService extends MedusaProductService {
 			);
 		}
 
-		const updateAttributes = async (
-			attributesToUpdate:
-				| Record<string, any>[]
-				| undefined,
-			attributeType: string
-		) => {
-			if (attributesToUpdate) {
-				logger.info(
-					`Updating product ${productId} with ${attributeType}:${JSON.stringify(
-						attributesToUpdate,
-						null,
-						2
-					)}`
-				);
-				const isIntAttribute =
-					attributeType ===
-					"int attribute values";
-				const promisedValues =
-					attributesToUpdate.map(
-						async (v) => {
-							const generalAttributeRepo =
-								isIntAttribute
-									? this
-											.intAttributeValueRepository
-									: this
-											.attributeValueRepository_;
-							const attributeValue =
-								await generalAttributeRepo.findOne(
-									{
-										where: {
-											id: v.id,
-										},
-										join: {
-											alias:
-												"general_attribute_value",
-											leftJoinAndSelect:
-												{
-													attribute:
-														"general_attribute_value.attribute",
-												},
-										},
-									}
-								);
-
-							let attribute =
-								attributeValue?.attribute;
-
-							if (!attribute) {
-								throw new Error(
-									`Attribute with value with id ${v?.id} not found.`
-								);
-							}
-
-							delete attribute?.values;
-							delete attribute?.int_values;
-
-							if (
-								!product?.attributes?.some(
-									(existingAttribute) =>
-										existingAttribute?.id ===
-										attribute?.id
-								)
-							) {
-								product.attributes = [
-									...(product?.attributes ||
-										[]),
-									attribute,
-								];
-							}
-
-							product.attributes.forEach(
-								(attribute) => {
-									//  check if actual attribute containe attributeValue by id
-									//  if not add it to the attribute
-									let values =
-										isIntAttribute
-											? attribute?.int_values ||
-											  []
-											: attribute?.values ||
-											  [];
-
-									if (
-										values?.some(
-											(existingValue) =>
-												existingValue?.id ===
-												v?.id
-										)
-									) {
-										if (
-											!isIntAttribute
-										) {
-											attribute.values =
-												[
-													...attribute?.values,
-													attributeValue as AttributeValue,
-												];
-										} else {
-											attribute.int_values =
-												[
-													...attribute?.int_values,
-													attributeValue as IntAttributeValue,
-												];
-										}
-									}
-								}
-							);
-
-							if (isIntAttribute) {
-								const toCreate =
-									intAttributeValueRepo.create(
-										{
-											id: v.id,
-											value: v.value,
-											attribute: {
-												id: v.attribute_id,
-											},
-										}
-									);
-
-								return toCreate;
-							}
-
-							return v;
-						}
+		const updateAttributeValues =
+			async (
+				attributesValuesToUse:
+					| Record<string, any>[]
+					| undefined,
+				attributeValueType: string
+			) => {
+				if (attributesValuesToUse) {
+					logger.info(
+						`Updating product ${productId} with ${attributeValueType}:${JSON.stringify(
+							attributesValuesToUse,
+							null,
+							2
+						)}`
 					);
-				return await Promise.all(
-					promisedValues
-				);
-			}
-		};
+					const isIntAttribute =
+						attributeValueType ===
+						"int attribute values";
+					const promisedValues =
+						attributesValuesToUse.map(
+							async (v) => {
+								if (isIntAttribute) {
+									const toCreate =
+										intAttributeValueRepo.create(
+											{
+												id: v.id,
+												value: v.value,
+												attribute: {
+													id: v.attribute_id,
+												},
+											}
+										);
 
-		update.attribute_values =
-			await updateAttributes(
-				update.attribute_values,
-				"attribute values"
-			);
+									return toCreate;
+								}
+
+								return v;
+							}
+						);
+					return await Promise.all(
+						promisedValues
+					);
+				}
+			};
+
+		// const getAttributeIdByValues =
+		// 	async (
+		// 		attributesValuesToUse:
+		// 			| Record<string, any>[]
+		// 			| undefined,
+		// 		attributeValueType: string
+		// 	) => {
+		// 		if (attributesValuesToUse) {
+		// 			logger.info(
+		// 				`Updating product ${productId} with ${attributeValueType}:${JSON.stringify(
+		// 					attributesValuesToUse,
+		// 					null,
+		// 					2
+		// 				)}`
+		// 			);
+		// 			const isIntAttribute =
+		// 				attributeValueType ===
+		// 				"int attribute values";
+		// 			const promisedValues =
+		// 				attributesValuesToUse.map(
+		// 					async (v) => {
+		// 						const generalAttributeRepo =
+		// 							isIntAttribute
+		// 								? this
+		// 										.intAttributeValueRepository
+		// 								: this
+		// 										.attributeValueRepository_;
+		// 						const attributeValue =
+		// 							await generalAttributeRepo.findOne(
+		// 								{
+		// 									where: {
+		// 										id: v.id,
+		// 									},
+		// 									join: {
+		// 										alias:
+		// 											"general_attribute_value",
+		// 										leftJoinAndSelect:
+		// 											{
+		// 												attribute:
+		// 													"general_attribute_value.attribute",
+		// 											},
+		// 									},
+		// 								}
+		// 							);
+
+		// 						let attribute =
+		// 							attributeValue?.attribute;
+
+		// 						if (!attribute) {
+		// 							throw new Error(
+		// 								`Attribute with value with id ${v?.id} not found.`
+		// 							);
+		// 						}
+
+		// 						return attribute;
+		// 					}
+		// 				);
+		// 			return await Promise.all(
+		// 				promisedValues
+		// 			);
+		// 		}
+		// 	};
+
 		update.int_attribute_values =
-			await updateAttributes(
+			await updateAttributeValues(
 				update.int_attribute_values,
 				"int attribute values"
 			);
 
-		await productRepo.save(product);
+		// await productRepo.save(product);
 
 		logger.info(
 			`Updating product ${productId} with update:${JSON.stringify(
