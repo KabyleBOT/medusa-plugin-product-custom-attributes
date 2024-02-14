@@ -342,28 +342,23 @@ class ProductService extends MedusaProductService {
 
 		if (hasAttributesRelation) {
 			qb.leftJoinAndSelect(
-				`${productAlias}.attributes`,
-				"attributes"
+				`${productAlias}.attributes`, // Relationship from Product to Attribute
+				"attribute" // Alias for the attributes
 			);
 
 			if (hasAttributesValuesRelation) {
 				qb.leftJoinAndSelect(
-					"attributes.values",
-					"product_attribute_values"
-				).andWhere(
-					// select values that have a relationship to product
-					`product_attribute_values.productId = ${productAlias}.id`
+					"attribute.values", // Relationship from Attribute to AttributeValue
+					"attributeValue" // Alias for the attribute values
 				);
 			}
+
 			if (
 				hasIntAttributesValuesRelation
 			) {
 				qb.leftJoinAndSelect(
-					"attributes.int_values",
-					"product_int_values"
-				).andWhere(
-					// select values that have a relationship to product
-					`product_int_values.productId = ${productAlias}.id`
+					"attribute.int_values", // Relationship from Attribute to IntAttributeValue
+					"intValue" // Alias for the int attribute values
 				);
 			}
 		}

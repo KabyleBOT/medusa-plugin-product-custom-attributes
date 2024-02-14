@@ -5,23 +5,24 @@ export default async function () {
 	imports.allowedStoreProductsRelations =
 		[
 			...imports.allowedStoreProductsRelations,
-			// "attribute_values",
+			"attribute_values",
 			"attributes",
 			// "attribute_values.attribute",
 			"attributes.values",
-			// "int_attribute_values",
+			"int_attribute_values",
 			// "int_attribute_values.attribute",
 			"attributes.int_values",
+			"attributes.categories",
 		];
 	imports.defaultStoreProductsRelations =
 		[
 			...imports.defaultStoreProductsRelations,
 			// "attribute_values",
-			"attributes",
+			// "attributes",
 			// "attribute_values.attribute",
-			"attributes.values",
+			// "attributes.values",
 			// "int_attribute_values",
 			// "int_attribute_values.attribute",
-			"attributes.int_values",
+			// "attributes.int_values",
 		];
 }
