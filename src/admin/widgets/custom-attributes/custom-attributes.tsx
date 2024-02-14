@@ -168,10 +168,31 @@ const CustomAttributes = ({
 				[]
 			);
 
+		// const attributesIds =
+		// 	attributes.map((it) => {
+		// 		return { id: it.id };
+		// 	});
+
+		//  include in attributesIds the attributes that attribute_values and int_attribute_values are related to
+		//  if attribute.values contain the one of the attribute_values Ids or int_attribute_values Ids, then include the attribute in attributesIds
 		const attributesIds =
-			attributes.map((it) => {
-				return { id: it.id };
-			});
+			attributes.reduce((acc, cur) => {
+				if (
+					cur.values.some(
+						(val) =>
+							attribute_values.some(
+								(av) => av.id === val.id
+							) ||
+							int_attribute_values.some(
+								(iav) =>
+									iav.id === val.id
+							)
+					)
+				) {
+					acc.push({ id: cur.id });
+				}
+				return acc;
+			}, []);
 
 		mutate({
 			// @ts-ignore
