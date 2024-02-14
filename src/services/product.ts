@@ -67,8 +67,6 @@ class ProductService extends MedusaProductService {
 			>[];
 		}
 	) {
-		const logger =
-			this.container.logger;
 		const manager = this.activeManager_;
 
 		const productRepo =
@@ -195,37 +193,17 @@ class ProductService extends MedusaProductService {
 		let count: number;
 		let products: Product[];
 
-		const hasAttributesRelation =
-			config.relations?.includes(
-				"attributes"
-			);
-
-		const hasAttributesValuesRelation =
-			config.relations?.includes(
-				"attributes.values"
-			);
-		const hasIntAttributesValuesRelation =
-			config.relations?.includes(
-				"attributes.int_values"
-			);
-
 		if (
 			q ||
 			attributesArg.attributes ||
-			attributesArg.int_attributes ||
-			hasAttributesValuesRelation ||
-			hasIntAttributesValuesRelation ||
-			hasAttributesRelation
+			attributesArg.int_attributes
 		) {
 			[products, count] =
 				await this.getResultsAndCountWithAttributes(
 					q,
 					query,
 					relations,
-					attributesArg,
-					hasAttributesValuesRelation,
-					hasIntAttributesValuesRelation,
-					hasAttributesRelation
+					attributesArg
 				);
 		} else {
 			[products, count] =
@@ -262,10 +240,7 @@ class ProductService extends MedusaProductService {
 		{
 			attributes,
 			int_attributes,
-		}: AttributesArgument = {},
-		hasAttributesValuesRelation = false,
-		hasIntAttributesValuesRelation = false,
-		hasAttributesRelation = false
+		}: AttributesArgument = {}
 	): Promise<[Product[], number]> {
 		const manager = this.activeManager_;
 		const productRepo =
@@ -339,29 +314,6 @@ class ProductService extends MedusaProductService {
 			.where(option_.where)
 			.skip(option_.skip)
 			.take(option_.take);
-
-		if (hasAttributesRelation) {
-			qb.leftJoinAndSelect(
-				`${productAlias}.attributes`, // Relationship from Product to Attribute
-				"attribute" // Alias for the attributes
-			);
-
-			if (hasAttributesValuesRelation) {
-				qb.leftJoinAndSelect(
-					"attribute.values", // Relationship from Attribute to AttributeValue
-					"attributeValue" // Alias for the attribute values
-				);
-			}
-
-			if (
-				hasIntAttributesValuesRelation
-			) {
-				qb.leftJoinAndSelect(
-					"attribute.int_values", // Relationship from Attribute to IntAttributeValue
-					"intValue" // Alias for the int attribute values
-				);
-			}
-		}
 
 		if (q) {
 			qb.andWhere(
