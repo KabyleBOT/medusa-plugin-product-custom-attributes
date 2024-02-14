@@ -16,6 +16,8 @@ import { applyOrdering } from "@medusajs/medusa/dist/utils/repository";
 import { cloneDeep } from "lodash";
 import { Brackets } from "typeorm";
 import { Logger } from "@medusajs/medusa";
+import { IntAttributeValue } from "../models/int-attribute-value";
+import { AttributeValue } from "../models/attribute-value";
 
 type InjectedDependencies = {
 	productRepository: typeof ProductRepository;
@@ -76,10 +78,7 @@ class ProductService extends MedusaProductService {
 			manager.withRepository(
 				this.intAttributeValueRepository
 			);
-		const attributeValueRepo =
-			manager.withRepository(
-				this.attributeValueRepository_
-			);
+
 		const product =
 			await productRepo.findOneBy({
 				id: productId,
@@ -111,40 +110,32 @@ class ProductService extends MedusaProductService {
 				const promisedValues =
 					attributesToUpdate.map(
 						async (v) => {
-							const { attribute } =
-								!isIntAttribute
-									? await attributeValueRepo.findOne(
-											{
-												where: {
-													id: v.id,
+							const generalAttributeRepo =
+								isIntAttribute
+									? this
+											.intAttributeValueRepository
+									: this
+											.attributeValueRepository_;
+							const attributeValue =
+								await generalAttributeRepo.findOne(
+									{
+										where: {
+											id: v.id,
+										},
+										join: {
+											alias:
+												"general_attribute_value",
+											leftJoinAndSelect:
+												{
+													attribute:
+														"general_attribute_value.attribute",
 												},
-												join: {
-													alias:
-														"attribute_value",
-													leftJoinAndSelect:
-														{
-															attribute:
-																"attribute_value.attribute",
-														},
-												},
-											}
-									  )
-									: await intAttributeValueRepo.findOne(
-											{
-												where: {
-													id: v.id,
-												},
-												join: {
-													alias:
-														"int_attribute_value",
-													leftJoinAndSelect:
-														{
-															attribute:
-																"int_attribute_value.attribute",
-														},
-												},
-											}
-									  );
+										},
+									}
+								);
+
+							let attribute =
+								attributeValue?.attribute;
 
 							if (!attribute) {
 								throw new Error(
@@ -152,11 +143,52 @@ class ProductService extends MedusaProductService {
 								);
 							}
 
-							product.attributes = [
-								...(product?.attributes ||
-									[]),
-								attribute,
-							];
+							delete attribute?.values;
+							delete attribute?.int_values;
+
+							if (
+								!product.attributes.some(
+									(existingAttribute) =>
+										existingAttribute.id ===
+										attribute.id
+								)
+							) {
+								product.attributes = [
+									...(product?.attributes ||
+										[]),
+									attribute,
+								];
+							}
+
+							product.attributes.forEach(
+								(attribute) => {
+									//  check if actual attribute containe attributeValue by id
+									//  if not add it to the attribute
+									if (
+										!attribute.values.some(
+											(existingValue) =>
+												existingValue.id ===
+												v.id
+										)
+									) {
+										if (
+											!isIntAttribute
+										) {
+											attribute.values =
+												[
+													...attribute.values,
+													attributeValue as AttributeValue,
+												];
+										} else {
+											attribute.int_values =
+												[
+													...attribute.int_values,
+													attributeValue as IntAttributeValue,
+												];
+										}
+									}
+								}
+							);
 
 							if (isIntAttribute) {
 								const toCreate =
