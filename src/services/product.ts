@@ -195,6 +195,11 @@ class ProductService extends MedusaProductService {
 		let count: number;
 		let products: Product[];
 
+		const hasAttributesRelation =
+			config.relations?.includes(
+				"attributes"
+			);
+
 		const hasAttributesValuesRelation =
 			config.relations?.includes(
 				"attributes.values"
@@ -209,7 +214,8 @@ class ProductService extends MedusaProductService {
 			attributesArg.attributes ||
 			attributesArg.int_attributes ||
 			hasAttributesValuesRelation ||
-			hasIntAttributesValuesRelation
+			hasIntAttributesValuesRelation ||
+			hasAttributesRelation
 		) {
 			[products, count] =
 				await this.getResultsAndCountWithAttributes(
@@ -218,7 +224,8 @@ class ProductService extends MedusaProductService {
 					relations,
 					attributesArg,
 					hasAttributesValuesRelation,
-					hasIntAttributesValuesRelation
+					hasIntAttributesValuesRelation,
+					hasAttributesRelation
 				);
 		} else {
 			[products, count] =
@@ -257,7 +264,8 @@ class ProductService extends MedusaProductService {
 			int_attributes,
 		}: AttributesArgument = {},
 		hasAttributesValuesRelation = false,
-		hasIntAttributesValuesRelation = false
+		hasIntAttributesValuesRelation = false,
+		hasAttributesRelation = false
 	): Promise<[Product[], number]> {
 		const manager = this.activeManager_;
 		const productRepo =
@@ -332,25 +340,32 @@ class ProductService extends MedusaProductService {
 			.skip(option_.skip)
 			.take(option_.take);
 
-		if (hasAttributesValuesRelation) {
+		if (hasAttributesRelation) {
 			qb.leftJoinAndSelect(
-				"attributes.values",
-				"values"
-			).andWhere(
-				// select values that have a relationship to product
-				`values.productId = ${productAlias}.id`
+				`${productAlias}.attributes`,
+				"attributes"
 			);
-		}
-		if (
-			hasIntAttributesValuesRelation
-		) {
-			qb.leftJoinAndSelect(
-				"attributes.int_values",
-				"int_values"
-			).andWhere(
-				// select values that have a relationship to product
-				`int_values.productId = ${productAlias}.id`
-			);
+
+			if (hasAttributesValuesRelation) {
+				qb.leftJoinAndSelect(
+					"attributes.values",
+					"product_attribute_values"
+				).andWhere(
+					// select values that have a relationship to product
+					`values.productId = ${productAlias}.id`
+				);
+			}
+			if (
+				hasIntAttributesValuesRelation
+			) {
+				qb.leftJoinAndSelect(
+					"attributes.int_values",
+					"product_int_values"
+				).andWhere(
+					// select values that have a relationship to product
+					`int_values.productId = ${productAlias}.id`
+				);
+			}
 		}
 
 		if (q) {
