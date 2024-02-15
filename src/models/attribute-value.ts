@@ -16,8 +16,11 @@ export class AttributeValue extends BaseEntity {
 	@Column({ nullable: true })
 	value: string;
 
-	@Column({ nullable: true })
-	attribute_id: string;
+	@Column({
+		name: "attributeId",
+		nullable: true,
+	})
+	attributeId: string;
 
 	@ManyToOne(
 		() => Attribute,
@@ -44,9 +47,5 @@ export class AttributeValue extends BaseEntity {
 			this.id,
 			"attr_val"
 		);
-		if (!this.attribute_id) {
-			this.attribute_id =
-				this.attribute.id;
-		}
 	}
 }

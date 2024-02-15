@@ -11,9 +11,9 @@ export const useAdminAttributes = (
 			const response = await $api.get(
 				`/admin/attributes`,
 				{
-					// params: {
-					//   categories,
-					// },
+					params: {
+						categories,
+					},
 				}
 			);
 

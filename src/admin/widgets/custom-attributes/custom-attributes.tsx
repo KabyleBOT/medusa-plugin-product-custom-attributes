@@ -27,12 +27,12 @@ const CustomAttributes = ({
 	product,
 }: ProductDetailsWidgetProps) => {
 	const { attributes } =
-		useAdminAttributes(
-			// Category handles
-			product?.categories?.map(
-				(category) => category.handle
-			) ?? []
-		);
+		useAdminAttributes();
+		// Category handles
+		// We actually don't need this
+		// product?.categories?.map(
+		// 	(category) => category.handle
+		// ) ?? []
 	const { mutate, isLoading } =
 		useAdminUpdateProduct(product.id, {
 			onSuccess: () => {

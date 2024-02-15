@@ -16,7 +16,10 @@ export class IntAttributeValue extends BaseEntity {
 	@Column({ type: "int" })
 	value: number;
 
-	@Column({ nullable: true })
+	@Column({
+		name: "attributeId",
+		nullable: true,
+	})
 	attribute_id: string;
 
 	@ManyToMany(() => Product)
@@ -35,9 +38,5 @@ export class IntAttributeValue extends BaseEntity {
 			this.id,
 			"int_attr_val"
 		);
-		if (!this.attribute_id) {
-			this.attribute_id =
-				this.attribute.id;
-		}
 	}
 }
