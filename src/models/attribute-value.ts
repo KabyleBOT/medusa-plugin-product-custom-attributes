@@ -20,7 +20,7 @@ export class AttributeValue extends BaseEntity {
 		name: "attributeId",
 		nullable: true,
 	})
-	attributeId: string;
+	attribute_id: string;
 
 	@ManyToOne(
 		() => Attribute,
