@@ -1,6 +1,6 @@
 {
 	"name": "medusa-custom-attributes-ghilas",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"description": "Custom attributes plugin for Medusa ghilas-backstore",
 	"main": "index.js",
 	"author": "Khaled Belkouche <khaled.belkouche@assalas.com>",
@@ -24,7 +24,9 @@
 		"start:custom": "cross-env npm run build && node --preserve-symlinks --trace-warnings index.js",
 		"dev": "cross-env npm run build:server && medusa develop",
 		"build:server": "cross-env npm run clean && tsc -p tsconfig.json",
-		"prepare": "cross-env NODE_ENV=production npm run build:server && medusa-admin bundle"
+		"prepare": "cross-env NODE_ENV=production npm run build:server && medusa-admin bundle",
+		"get-env": "bash get-env.sh",
+		"dev:get-env": "cross-env npm run get-env && npm run dev"
 	},
 	"dependencies": {
 		"axios": "^1.5.1",
