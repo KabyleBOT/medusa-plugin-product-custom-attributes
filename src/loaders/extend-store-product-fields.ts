@@ -7,10 +7,10 @@ export default async function () {
 			...imports.allowedStoreProductsRelations,
 			"attribute_values",
 			"attributes",
-			// "attribute_values.attribute",
+			"attribute_values.attribute",
 			"attributes.values",
 			"int_attribute_values",
-			// "int_attribute_values.attribute",
+			"int_attribute_values.attribute",
 			"attributes.int_values",
 			"attributes.categories",
 		];
