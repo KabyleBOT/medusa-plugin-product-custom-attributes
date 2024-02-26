@@ -8,21 +8,20 @@ import {
 } from "@medusajs/medusa/dist/types/product";
 import AttributeValueRepository from "../repositories/attribute-value";
 import IntAttributeValueRepository from "../repositories/int-attribute-value";
-import AttributeRepository from "../repositories/attribute";
 import { IntAttributeParam } from "../api";
 import { MedusaV2Flag } from "@medusajs/utils";
 import { FindWithoutRelationsOptions } from "@medusajs/medusa/dist/repositories/product";
 import { applyOrdering } from "@medusajs/medusa/dist/utils/repository";
 import { cloneDeep } from "lodash";
 import { Brackets } from "typeorm";
-import { Logger } from "@medusajs/medusa";
+import { IntAttributeValue } from "../models/int-attribute-value";
+import { AttributeValue } from "../models/attribute-value";
+import { Attribute } from "../models/attribute";
 
 type InjectedDependencies = {
 	productRepository: typeof ProductRepository;
 	attributeValueRepository: typeof AttributeValueRepository;
 	intAttributeValueRepository: typeof IntAttributeValueRepository;
-	attributeRepository: typeof AttributeRepository;
-	logger: Logger;
 };
 
 type AttributesArgument = {
@@ -34,7 +33,6 @@ class ProductService extends MedusaProductService {
 	protected readonly productRepository_: typeof ProductRepository;
 	protected readonly intAttributeValueRepository: typeof IntAttributeValueRepository;
 	protected readonly attributeValueRepository_: typeof AttributeValueRepository;
-	protected readonly attributeRepository_: typeof AttributeRepository;
 
 	constructor(
 		private readonly container: InjectedDependencies
@@ -46,8 +44,101 @@ class ProductService extends MedusaProductService {
 			container.attributeValueRepository;
 		this.intAttributeValueRepository =
 			container.intAttributeValueRepository;
-		this.attributeRepository_ =
-			container.attributeRepository;
+	}
+
+	private decorateProductWithAttributes(
+		product: Product
+	) {
+		const attributesMap = new Map<
+			String,
+			Omit<
+				Attribute,
+				"beforeInsert"
+			> & {
+				values?: AttributeValue[];
+				value?: IntAttributeValue;
+			}
+		>();
+
+		product.attribute_values.forEach(
+			(av) => {
+				const {
+					attribute,
+					...valueWithoutAttribute
+				} = av;
+				if (!attribute?.id) return;
+				if (
+					!attributesMap.has(
+						attribute.id
+					)
+				) {
+					attributesMap.set(
+						attribute.id,
+						{
+							...attribute,
+							values: [
+								valueWithoutAttribute as AttributeValue,
+							],
+						}
+					);
+				} else {
+					attributesMap
+						.get(attribute.id)
+						.values.push(
+							valueWithoutAttribute as AttributeValue
+						);
+				}
+			}
+		);
+
+		product.int_attribute_values.forEach(
+			(av) => {
+				const {
+					attribute,
+					...valueWithoutAttribute
+				} = av;
+				if (!attribute?.id) return;
+				attributesMap.set(
+					attribute.id,
+					{
+						...attribute,
+						value:
+							valueWithoutAttribute as IntAttributeValue,
+					}
+				);
+			}
+		);
+
+		product.custom_attributes =
+			Array.from(
+				attributesMap.values()
+			);
+	}
+
+	async retrieve(
+		productId: string,
+		config?: FindProductConfig
+	): Promise<Product> {
+		const product =
+			await super.retrieve(
+				productId,
+				config
+			);
+
+		if (
+			config.relations?.includes(
+				"int_attribute_values"
+			) &&
+			config.relations.includes(
+				"attribute_values"
+			)
+		) {
+			this.decorateProductWithAttributes(
+				product
+			);
+		}
+
+		return product;
 	}
 
 	async update(
@@ -57,500 +148,467 @@ class ProductService extends MedusaProductService {
 				string,
 				any
 			>[];
-			attribute_values?: Record<
-				string,
-				any
-			>[];
-			attributes?: Record<
-				string,
-				any
-			>[];
 		}
 	) {
 		const manager = this.activeManager_;
-
-		const productRepo =
-			manager.withRepository(
-				this.productRepository_
-			);
-
 		const intAttributeValueRepo =
 			manager.withRepository(
 				this.intAttributeValueRepository
 			);
 
-		const product =
-			await productRepo.findOneBy({
-				id: productId,
-			});
-
-		if (!product) {
-			throw new Error(
-				`Product with id ${productId} not found.`
-			);
-		}
-
-		const updateAttributeValues =
-			async (
-				attributesValuesToUse:
-					| Record<string, any>[]
-					| undefined,
-				attributeValueType: string
-			) => {
-				if (attributesValuesToUse) {
-					const isIntAttribute =
-						attributeValueType ===
-						"int attribute values";
-					const promisedValues =
-						attributesValuesToUse.map(
-							async (v) => {
-								if (isIntAttribute) {
-									const toCreate =
-										intAttributeValueRepo.create(
-											{
-												id: v.id,
-												value: v.value,
-												attribute: {
-													id: v.attribute_id,
-												},
-											}
-										);
-
-									return toCreate;
+		if (update.int_attribute_values) {
+			update.int_attribute_values =
+				update.int_attribute_values.map(
+					(v) => {
+						const toCreate =
+							intAttributeValueRepo.create(
+								{
+									id: v.id,
+									value: v.value,
+									attribute: {
+										id: v.attribute_id,
+									},
 								}
+							);
 
-								return v;
-							}
-						);
-					return await Promise.all(
-						promisedValues
-					);
-				}
-			};
-
-		update.int_attribute_values =
-			await updateAttributeValues(
-				update.int_attribute_values,
-				"int attribute values"
-			);
+						return toCreate;
+					}
+				);
+		}
 
 		return await super.update(
 			productId,
 			update
 		);
 	}
-	// We don't need filtering for now and we will keep the original function
-	// 	async listAndCount(
-	// 		selector: ProductSelector & {
-	// 			attributes: string[];
-	// 			int_attributes: IntAttributeParam;
-	// 		},
-	// 		config: FindProductConfig = {
-	// 			relations: [],
-	// 			skip: 0,
-	// 			take: 20,
-	// 			include_discount_prices: false,
-	// 		}
-	// 	): Promise<[Product[], number]> {
-	// 		const manager = this.activeManager_;
-	// 		const productRepo =
-	// 			manager.withRepository(
-	// 				this.productRepository_
-	// 			);
 
-	// 		const attributesArg = {
-	// 			attributes: selector.attributes,
-	// 			int_attributes:
-	// 				selector.int_attributes,
-	// 		};
+	async listAndCount(
+		selector: ProductSelector & {
+			attributes: string[];
+			int_attributes: IntAttributeParam;
+		},
+		config: FindProductConfig = {
+			relations: [],
+			skip: 0,
+			take: 20,
+			include_discount_prices: false,
+		}
+	): Promise<[Product[], number]> {
+		const manager = this.activeManager_;
+		const productRepo =
+			manager.withRepository(
+				this.productRepository_
+			);
 
-	// 		delete selector.attributes;
-	// 		delete selector.int_attributes;
+		const attributesArg = {
+			attributes: selector.attributes,
+			int_attributes:
+				selector.int_attributes,
+		};
 
-	// 		const hasSalesChannelsRelation =
-	// 			config.relations?.includes(
-	// 				"sales_channels"
-	// 			);
+		delete selector.attributes;
+		delete selector.int_attributes;
 
-	// 		if (
-	// 			this.featureFlagRouter_.isFeatureEnabled(
-	// 				MedusaV2Flag.key
-	// 			) &&
-	// 			hasSalesChannelsRelation
-	// 		) {
-	// 			config.relations =
-	// 				config.relations?.filter(
-	// 					(r) => r !== "sales_channels"
-	// 				);
-	// 		}
+		const hasSalesChannelsRelation =
+			config.relations?.includes(
+				"sales_channels"
+			);
 
-	// 		const { q, query, relations } =
-	// 			this.prepareListQuery_(
-	// 				selector,
-	// 				config
-	// 			);
+		if (
+			this.featureFlagRouter_.isFeatureEnabled(
+				MedusaV2Flag.key
+			) &&
+			hasSalesChannelsRelation
+		) {
+			config.relations =
+				config.relations?.filter(
+					(r) => r !== "sales_channels"
+				);
+		}
 
-	// 		let count: number;
-	// 		let products: Product[];
+		const { q, query, relations } =
+			this.prepareListQuery_(
+				selector,
+				config
+			);
 
-	// 		if (
-	// 			q ||
-	// 			attributesArg.attributes ||
-	// 			attributesArg.int_attributes
-	// 		) {
-	// 			[products, count] =
-	// 				await this.getResultsAndCountWithAttributes(
-	// 					q,
-	// 					query,
-	// 					relations,
-	// 					attributesArg
-	// 				);
-	// 		} else {
-	// 			[products, count] =
-	// 				await productRepo.findWithRelationsAndCount(
-	// 					relations,
-	// 					query
-	// 				);
-	// 		}
+		let count: number;
+		let products: Product[];
 
-	// 		if (
-	// 			this.featureFlagRouter_.isFeatureEnabled(
-	// 				MedusaV2Flag.key
-	// 			) &&
-	// 			hasSalesChannelsRelation
-	// 		) {
-	// 			// @ts-expect-error
-	// 			await this.decorateProductsWithSalesChannels(
-	// 				products
-	// 			);
-	// 		}
+		if (
+			q ||
+			attributesArg.attributes ||
+			attributesArg.int_attributes
+		) {
+			[products, count] =
+				await this.getResultsAndCountWithAttributes(
+					q,
+					query,
+					relations,
+					attributesArg
+				);
+		} else {
+			[products, count] =
+				await productRepo.findWithRelationsAndCount(
+					relations,
+					query
+				);
+		}
 
-	// 		return [products, count];
-	// 	}
+		if (
+			this.featureFlagRouter_.isFeatureEnabled(
+				MedusaV2Flag.key
+			) &&
+			hasSalesChannelsRelation
+		) {
+			// @ts-expect-error
+			await this.decorateProductsWithSalesChannels(
+				products
+			);
+		}
 
-	// 	/**
-	// 	 * Copying function from repo due to error `TypeError: productRepo.findWithRelationsAndCount is not a function`
-	// 	 */
-	// 	async getResultsAndCountWithAttributes(
-	// 		q?: string,
-	// 		options: FindWithoutRelationsOptions = {
-	// 			where: {},
-	// 		},
-	// 		relations: string[] = [],
-	// 		{
-	// 			attributes,
-	// 			int_attributes,
-	// 		}: AttributesArgument = {}
-	// 	): Promise<[Product[], number]> {
-	// 		const manager = this.activeManager_;
-	// 		const productRepo =
-	// 			manager.withRepository(
-	// 				this.productRepository_
-	// 			);
-	// 		const option_ = cloneDeep(options);
+		// Check if the product has the attribute relations and decorate the product with the attributes
+		if (
+			config.relations?.includes(
+				"int_attribute_values"
+			) &&
+			config.relations.includes(
+				"attribute_values"
+			)
+		) {
+			products.forEach((product) => {
+				this.decorateProductWithAttributes(
+					product
+				);
+			});
+		}
 
-	// 		const productAlias = "product";
-	// 		const pricesAlias = "prices";
-	// 		const variantsAlias = "variants";
-	// 		const collectionAlias =
-	// 			"collection";
-	// 		const tagsAlias = "tags";
+		return [products, count];
+	}
 
-	// 		if (
-	// 			"description" in option_.where
-	// 		) {
-	// 			delete option_.where.description;
-	// 		}
+	/**
+	 * Copying function from repo due to error `TypeError: productRepo.findWithRelationsAndCount is not a function`
+	 */
+	async getResultsAndCountWithAttributes(
+		q?: string,
+		options: FindWithoutRelationsOptions = {
+			where: {},
+		},
+		relations: string[] = [],
+		{
+			attributes,
+			int_attributes,
+		}: AttributesArgument = {}
+	): Promise<[Product[], number]> {
+		const manager = this.activeManager_;
+		const productRepo =
+			manager.withRepository(
+				this.productRepository_
+			);
+		const option_ = cloneDeep(options);
 
-	// 		if ("title" in option_.where) {
-	// 			delete option_.where.title;
-	// 		}
+		const productAlias = "product";
+		const pricesAlias = "prices";
+		const variantsAlias = "variants";
+		const collectionAlias =
+			"collection";
+		const tagsAlias = "tags";
 
-	// 		const tags = option_.where.tags;
-	// 		delete option_.where.tags;
+		if (
+			"description" in option_.where
+		) {
+			delete option_.where.description;
+		}
 
-	// 		const price_lists =
-	// 			option_.where.price_list_id;
-	// 		delete option_.where.price_list_id;
+		if ("title" in option_.where) {
+			delete option_.where.title;
+		}
 
-	// 		const sales_channels =
-	// 			option_.where.sales_channel_id;
-	// 		delete option_.where
-	// 			.sales_channel_id;
+		const tags = option_.where.tags;
+		delete option_.where.tags;
 
-	// 		const discount_condition_id =
-	// 			option_.where
-	// 				.discount_condition_id;
-	// 		delete option_.where
-	// 			.discount_condition_id;
+		const price_lists =
+			option_.where.price_list_id;
+		delete option_.where.price_list_id;
 
-	// 		const categoryId =
-	// 			option_.where.category_id;
-	// 		delete option_.where.category_id;
+		const sales_channels =
+			option_.where.sales_channel_id;
+		delete option_.where
+			.sales_channel_id;
 
-	// 		const includeCategoryChildren =
-	// 			option_?.where
-	// 				?.include_category_children;
-	// 		delete option_?.where
-	// 			?.include_category_children;
+		const discount_condition_id =
+			option_.where
+				.discount_condition_id;
+		delete option_.where
+			.discount_condition_id;
 
-	// 		const categoriesQuery =
-	// 			option_.where.categories || {};
-	// 		delete option_.where.categories;
+		const categoryId =
+			option_.where.category_id;
+		delete option_.where.category_id;
 
-	// 		let qb = productRepo
-	// 			.createQueryBuilder(
-	// 				`${productAlias}`
-	// 			)
-	// 			.leftJoinAndSelect(
-	// 				`${productAlias}.variants`,
-	// 				variantsAlias
-	// 			)
-	// 			.leftJoinAndSelect(
-	// 				`${productAlias}.collection`,
-	// 				`${collectionAlias}`
-	// 			)
-	// 			.select([`${productAlias}.id`])
-	// 			.where(option_.where)
-	// 			.skip(option_.skip)
-	// 			.take(option_.take);
+		const includeCategoryChildren =
+			option_?.where
+				?.include_category_children;
+		delete option_?.where
+			?.include_category_children;
 
-	// 		if (q) {
-	// 			qb.andWhere(
-	// 				new Brackets((qb) => {
-	// 					qb.where(
-	// 						`${productAlias}.description ILIKE :q`,
-	// 						{ q: `%${q}%` }
-	// 					)
-	// 						.orWhere(
-	// 							`${productAlias}.title ILIKE :q`,
-	// 							{ q: `%${q}%` }
-	// 						)
-	// 						.orWhere(
-	// 							`${variantsAlias}.title ILIKE :q`,
-	// 							{ q: `%${q}%` }
-	// 						)
-	// 						.orWhere(
-	// 							`${variantsAlias}.sku ILIKE :q`,
-	// 							{ q: `%${q}%` }
-	// 						)
-	// 						.orWhere(
-	// 							`${collectionAlias}.title ILIKE :q`,
-	// 							{ q: `%${q}%` }
-	// 						);
-	// 				})
-	// 			);
-	// 		}
+		const categoriesQuery =
+			option_.where.categories || {};
+		delete option_.where.categories;
 
-	// 		if (discount_condition_id) {
-	// 			qb.innerJoin(
-	// 				"discount_condition_product",
-	// 				"dc_product",
-	// 				`dc_product.product_id = ${productAlias}.id AND dc_product.condition_id = :dcId`,
-	// 				{ dcId: discount_condition_id }
-	// 			);
-	// 		}
+		let qb = productRepo
+			.createQueryBuilder(
+				`${productAlias}`
+			)
+			.leftJoinAndSelect(
+				`${productAlias}.variants`,
+				variantsAlias
+			)
+			.leftJoinAndSelect(
+				`${productAlias}.collection`,
+				`${collectionAlias}`
+			)
+			.select([`${productAlias}.id`])
+			.where(option_.where)
+			.skip(option_.skip)
+			.take(option_.take);
 
-	// 		if (attributes) {
-	// 			qb.leftJoinAndSelect(
-	// 				`${productAlias}.attribute_values`,
-	// 				"attribute_values"
-	// 			);
-	// 			qb.leftJoinAndSelect(
-	// 				`attribute_values.attribute`,
-	// 				"attribute"
-	// 			);
+		if (q) {
+			qb.andWhere(
+				new Brackets((qb) => {
+					qb.where(
+						`${productAlias}.description ILIKE :q`,
+						{ q: `%${q}%` }
+					)
+						.orWhere(
+							`${productAlias}.title ILIKE :q`,
+							{ q: `%${q}%` }
+						)
+						.orWhere(
+							`${variantsAlias}.title ILIKE :q`,
+							{ q: `%${q}%` }
+						)
+						.orWhere(
+							`${variantsAlias}.sku ILIKE :q`,
+							{ q: `%${q}%` }
+						)
+						.orWhere(
+							`${collectionAlias}.title ILIKE :q`,
+							{ q: `%${q}%` }
+						);
+				})
+			);
+		}
 
-	// 			qb.andWhere(
-	// 				`attribute_values.id IN (:...values)`,
-	// 				{
-	// 					values: attributes,
-	// 				}
-	// 			);
-	// 		}
+		if (discount_condition_id) {
+			qb.innerJoin(
+				"discount_condition_product",
+				"dc_product",
+				`dc_product.product_id = ${productAlias}.id AND dc_product.condition_id = :dcId`,
+				{ dcId: discount_condition_id }
+			);
+		}
 
-	// 		if (int_attributes) {
-	// 			const filters = Object.entries(
-	// 				int_attributes
-	// 			).reduce((acc, [id, values]) => {
-	// 				acc.push({
-	// 					fromValue: values[0] || null,
-	// 					toValue: values[1] || null,
-	// 					attributeId: id,
-	// 				});
+		if (attributes) {
+			qb.leftJoinAndSelect(
+				`${productAlias}.attribute_values`,
+				"attribute_values"
+			);
+			qb.leftJoinAndSelect(
+				`attribute_values.attribute`,
+				"attribute"
+			);
 
-	// 				return acc;
-	// 			}, []);
+			qb.andWhere(
+				`attribute_values.id IN (:...values)`,
+				{
+					values: attributes,
+				}
+			);
+		}
 
-	// 			filters.forEach(
-	// 				async (filter, index) => {
-	// 					const subQuery = productRepo
-	// 						.createQueryBuilder(
-	// 							"product"
-	// 						)
-	// 						.select("product.id as id")
-	// 						.leftJoin(
-	// 							"product.int_attribute_values",
-	// 							"int_attribute_values"
-	// 						)
-	// 						.andWhere(
-	// 							`int_attribute_values.attributeId = :attributeId${index}`
-	// 						);
+		if (int_attributes) {
+			const filters = Object.entries(
+				int_attributes
+			).reduce((acc, [id, values]) => {
+				acc.push({
+					fromValue: values[0] || null,
+					toValue: values[1] || null,
+					attributeId: id,
+				});
 
-	// 					subQuery.andWhere(
-	// 						new Brackets((qb) => {
-	// 							qb.where(
-	// 								`int_attribute_values.value >= :fromValue${index}`
-	// 							);
+				return acc;
+			}, []);
 
-	// 							if (filter.toValue) {
-	// 								qb.andWhere(
-	// 									`int_attribute_values.value <= :toValue${index}`
-	// 								);
-	// 							}
-	// 						})
-	// 					);
+			filters.forEach(
+				async (filter, index) => {
+					const subQuery = productRepo
+						.createQueryBuilder(
+							"product"
+						)
+						.select("product.id as id")
+						.leftJoin(
+							"product.int_attribute_values",
+							"int_attribute_values"
+						)
+						.andWhere(
+							`int_attribute_values.attributeId = :attributeId${index}`
+						);
 
-	// 					qb.andWhere(
-	// 						`product.id IN (${subQuery.getQuery()})`,
-	// 						{
-	// 							[`attributeId${index}`]:
-	// 								filter.attributeId,
-	// 							[`fromValue${index}`]:
-	// 								filter.fromValue,
-	// 							[`toValue${index}`]:
-	// 								filter.toValue,
-	// 						}
-	// 					);
-	// 				}
-	// 			);
-	// 		}
+					subQuery.andWhere(
+						new Brackets((qb) => {
+							qb.where(
+								`int_attribute_values.value >= :fromValue${index}`
+							);
 
-	// 		if (tags) {
-	// 			qb.leftJoin(
-	// 				`${productAlias}.tags`,
-	// 				tagsAlias
-	// 			).andWhere(
-	// 				`${tagsAlias}.id IN (:...tag_ids)`,
-	// 				{
-	// 					tag_ids: tags.value,
-	// 				}
-	// 			);
-	// 		}
+							if (filter.toValue) {
+								qb.andWhere(
+									`int_attribute_values.value <= :toValue${index}`
+								);
+							}
+						})
+					);
 
-	// 		if (price_lists) {
-	// 			const variantPricesAlias = `${variantsAlias}_prices`;
-	// 			qb.leftJoin(
-	// 				`${productAlias}.variants`,
-	// 				variantPricesAlias
-	// 			)
-	// 				.leftJoin(
-	// 					`${variantPricesAlias}.prices`,
-	// 					pricesAlias
-	// 				)
-	// 				.andWhere(
-	// 					`${pricesAlias}.price_list_id IN (:...price_list_ids)`,
-	// 					{
-	// 						price_list_ids:
-	// 							price_lists.value,
-	// 					}
-	// 				);
-	// 		}
+					qb.andWhere(
+						`product.id IN (${subQuery.getQuery()})`,
+						{
+							[`attributeId${index}`]:
+								filter.attributeId,
+							[`fromValue${index}`]:
+								filter.fromValue,
+							[`toValue${index}`]:
+								filter.toValue,
+						}
+					);
+				}
+			);
+		}
 
-	// 		if (sales_channels) {
-	// 			qb.innerJoin(
-	// 				`${productAlias}.sales_channels`,
-	// 				"sales_channels",
-	// 				"sales_channels.id IN (:...sales_channels_ids)",
-	// 				{
-	// 					sales_channels_ids:
-	// 						sales_channels.value,
-	// 				}
-	// 			);
-	// 		}
+		if (tags) {
+			qb.leftJoin(
+				`${productAlias}.tags`,
+				tagsAlias
+			).andWhere(
+				`${tagsAlias}.id IN (:...tag_ids)`,
+				{
+					tag_ids: tags.value,
+				}
+			);
+		}
 
-	// 		if (categoriesQuery) {
-	// 			const joinScope = {};
-	// 			const categoryIds: string[] =
-	// 				await productRepo.getCategoryIdsFromInput(
-	// 					categoryId,
-	// 					includeCategoryChildren
-	// 				);
+		if (price_lists) {
+			const variantPricesAlias = `${variantsAlias}_prices`;
+			qb.leftJoin(
+				`${productAlias}.variants`,
+				variantPricesAlias
+			)
+				.leftJoin(
+					`${variantPricesAlias}.prices`,
+					pricesAlias
+				)
+				.andWhere(
+					`${pricesAlias}.price_list_id IN (:...price_list_ids)`,
+					{
+						price_list_ids:
+							price_lists.value,
+					}
+				);
+		}
 
-	// 			if (categoryIds.length) {
-	// 				Object.assign(joinScope, {
-	// 					id: categoryIds,
-	// 				});
-	// 			}
+		if (sales_channels) {
+			qb.innerJoin(
+				`${productAlias}.sales_channels`,
+				"sales_channels",
+				"sales_channels.id IN (:...sales_channels_ids)",
+				{
+					sales_channels_ids:
+						sales_channels.value,
+				}
+			);
+		}
 
-	// 			if (categoriesQuery) {
-	// 				Object.assign(
-	// 					joinScope,
-	// 					categoriesQuery
-	// 				);
-	// 			}
+		if (categoriesQuery) {
+			const joinScope = {};
+			const categoryIds: string[] =
+				await productRepo.getCategoryIdsFromInput(
+					categoryId,
+					includeCategoryChildren
+				);
 
-	// 			productRepo._applyCategoriesQuery(
-	// 				qb,
-	// 				{
-	// 					alias: productAlias,
-	// 					categoryAlias: "categories",
-	// 					where: joinScope,
-	// 					joinName: categoryIds.length
-	// 						? "innerJoin"
-	// 						: "leftJoin",
-	// 				}
-	// 			);
-	// 		}
+			if (categoryIds.length) {
+				Object.assign(joinScope, {
+					id: categoryIds,
+				});
+			}
 
-	// 		const joinedWithTags = !!tags;
-	// 		const joinedWithPriceLists =
-	// 			!!price_lists;
-	// 		applyOrdering({
-	// 			repository: productRepo,
-	// 			order:
-	// 				(options.order as any) ?? {},
-	// 			qb,
-	// 			alias: productAlias,
-	// 			shouldJoin: (relation) =>
-	// 				relation !== variantsAlias &&
-	// 				(relation !== pricesAlias ||
-	// 					!joinedWithPriceLists) &&
-	// 				(relation !== tagsAlias ||
-	// 					!joinedWithTags),
-	// 		});
+			if (categoriesQuery) {
+				Object.assign(
+					joinScope,
+					categoriesQuery
+				);
+			}
 
-	// 		if (option_.withDeleted) {
-	// 			qb = qb.withDeleted();
-	// 		}
+			productRepo._applyCategoriesQuery(
+				qb,
+				{
+					alias: productAlias,
+					categoryAlias: "categories",
+					where: joinScope,
+					joinName: categoryIds.length
+						? "innerJoin"
+						: "leftJoin",
+				}
+			);
+		}
 
-	// 		const [results, count] =
-	// 			await qb.getManyAndCount();
-	// 		const orderedResultsSet = new Set(
-	// 			results.map((p) => p.id)
-	// 		);
+		const joinedWithTags = !!tags;
+		const joinedWithPriceLists =
+			!!price_lists;
+		applyOrdering({
+			repository: productRepo,
+			order:
+				(options.order as any) ?? {},
+			qb,
+			alias: productAlias,
+			shouldJoin: (relation) =>
+				relation !== variantsAlias &&
+				(relation !== pricesAlias ||
+					!joinedWithPriceLists) &&
+				(relation !== tagsAlias ||
+					!joinedWithTags),
+		});
 
-	// 		const products =
-	// 			await productRepo.findWithRelations(
-	// 				relations,
-	// 				[...orderedResultsSet],
-	// 				option_.withDeleted
-	// 			);
-	// 		const productsMap = new Map(
-	// 			products.map((p) => [p.id, p])
-	// 		);
+		if (option_.withDeleted) {
+			qb = qb.withDeleted();
+		}
 
-	// 		// Looping through the orderedResultsSet in order to maintain the original order and assign the data returned by findWithRelations
-	// 		const orderedProducts: Product[] =
-	// 			[];
-	// 		orderedResultsSet.forEach((id) => {
-	// 			orderedProducts.push(
-	// 				productsMap.get(id)!
-	// 			);
-	// 		});
+		const [results, count] =
+			await qb.getManyAndCount();
+		const orderedResultsSet = new Set(
+			results.map((p) => p.id)
+		);
 
-	// 		return [orderedProducts, count];
-	// 	}
+		const products =
+			await productRepo.findWithRelations(
+				relations,
+				[...orderedResultsSet],
+				option_.withDeleted
+			);
+		const productsMap = new Map(
+			products.map((p) => [p.id, p])
+		);
+
+		// Looping through the orderedResultsSet in order to maintain the original order and assign the data returned by findWithRelations
+		const orderedProducts: Product[] =
+			[];
+		orderedResultsSet.forEach((id) => {
+			orderedProducts.push(
+				productsMap.get(id)!
+			);
+		});
+
+		return [orderedProducts, count];
+	}
 }
 
 export default ProductService;
