@@ -8,8 +8,6 @@ import { Product as MedusaProduct } from "@medusajs/medusa";
 import { AttributeValue } from "./attribute-value";
 import { IntAttributeValue } from "./int-attribute-value";
 
-import { CustomAttributeInProduct } from "..";
-
 @Entity()
 export class Product extends MedusaProduct {
 	@ManyToMany(() => AttributeValue)
@@ -28,5 +26,5 @@ export class Product extends MedusaProduct {
 	@Column({
 		nullable: true,
 	})
-	custom_attributes: CustomAttributeInProduct[];
+	custom_attributes: any[];
 }
