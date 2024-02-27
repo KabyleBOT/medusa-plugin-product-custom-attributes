@@ -73,7 +73,7 @@ class ProductService extends MedusaProductService {
 					)
 				) {
 					attributesMap.set(
-						attribute.id,
+						attribute?.id,
 						{
 							...attribute,
 							values: [
@@ -97,7 +97,7 @@ class ProductService extends MedusaProductService {
 					attribute,
 					...valueWithoutAttribute
 				} = av;
-				// if (!attribute?.id) return;
+				if (!attribute?.id) return;
 				attributesMap.set(
 					attribute?.id,
 					{
