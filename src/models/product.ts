@@ -7,6 +7,7 @@ import {
 import { Product as MedusaProduct } from "@medusajs/medusa";
 import { AttributeValue } from "./attribute-value";
 import { IntAttributeValue } from "./int-attribute-value";
+import { Attribute } from "./attribute";
 
 @Entity()
 export class Product extends MedusaProduct {
@@ -23,8 +24,17 @@ export class Product extends MedusaProduct {
 	})
 	int_attribute_values: IntAttributeValue[];
 
-	@Column({
-		nullable: true,
+	@ManyToMany(() => Attribute)
+	@JoinTable({
+		name: "product_attributes_attribute", // name of the table that we created in the migration
+		joinColumn: {
+			name: "productId", // field that represents Product entity in the join table
+			referencedColumnName: "id",
+		},
+		inverseJoinColumn: {
+			name: "attributeId", // field that represents Attribute entity in the join table
+			referencedColumnName: "id",
+		},
 	})
 	custom_attributes: any[];
 }
