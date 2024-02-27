@@ -46,7 +46,7 @@ class ProductService extends MedusaProductService {
 			container.intAttributeValueRepository;
 	}
 
-	private decorateProductWithAttributes(
+	private async decorateProductWithAttributes(
 		product: Product
 	) {
 		const attributesMap = new Map<
@@ -66,10 +66,10 @@ class ProductService extends MedusaProductService {
 					attribute,
 					...valueWithoutAttribute
 				} = av;
-				if (!attribute?.id) return;
+				// if (!attribute?.id) return;
 				if (
 					!attributesMap.has(
-						attribute.id
+						attribute?.id
 					)
 				) {
 					attributesMap.set(
@@ -83,7 +83,7 @@ class ProductService extends MedusaProductService {
 					);
 				} else {
 					attributesMap
-						.get(attribute.id)
+						.get(attribute?.id)
 						.values.push(
 							valueWithoutAttribute as AttributeValue
 						);
@@ -97,9 +97,9 @@ class ProductService extends MedusaProductService {
 					attribute,
 					...valueWithoutAttribute
 				} = av;
-				if (!attribute?.id) return;
+				// if (!attribute?.id) return;
 				attributesMap.set(
-					attribute.id,
+					attribute?.id,
 					{
 						...attribute,
 						value:
@@ -113,6 +113,7 @@ class ProductService extends MedusaProductService {
 			Array.from(
 				attributesMap.values()
 			);
+		return product;
 	}
 
 	async retrieve(
@@ -124,19 +125,19 @@ class ProductService extends MedusaProductService {
 				productId,
 				config
 			);
-
-		if (
-			config.relations?.includes(
-				"int_attribute_values"
-			) &&
-			config.relations.includes(
-				"attribute_values"
-			)
-		) {
-			this.decorateProductWithAttributes(
-				product
-			);
-		}
+		// Check if the product has the attribute relations and decorate the product with the attributes
+		// if (
+		// 	config.relations?.includes(
+		// 		"int_attribute_values"
+		// 	) &&
+		// 	config.relations.includes(
+		// 		"attribute_values"
+		// 	)
+		// ) {
+		// 	this.decorateProductWithAttributes(
+		// 		product
+		// 	);
+		// }
 
 		return product;
 	}
@@ -176,10 +177,18 @@ class ProductService extends MedusaProductService {
 				);
 		}
 
-		return await super.update(
-			productId,
-			update
-		);
+		const updatedProduct =
+			await super.update(
+				productId,
+				update
+			);
+
+		const decoratedProductWithAttributes =
+			this.decorateProductWithAttributes(
+				updatedProduct
+			);
+
+		return decoratedProductWithAttributes;
 	}
 
 	async listAndCount(
@@ -268,20 +277,20 @@ class ProductService extends MedusaProductService {
 		}
 
 		// Check if the product has the attribute relations and decorate the product with the attributes
-		if (
-			config.relations?.includes(
-				"int_attribute_values"
-			) &&
-			config.relations.includes(
-				"attribute_values"
-			)
-		) {
-			products.forEach((product) => {
-				this.decorateProductWithAttributes(
-					product
-				);
-			});
-		}
+		// if (
+		// 	config.relations?.includes(
+		// 		"int_attribute_values"
+		// 	) &&
+		// 	config.relations.includes(
+		// 		"attribute_values"
+		// 	)
+		// ) {
+		// 	products.forEach((product) => {
+		// 		this.decorateProductWithAttributes(
+		// 			product
+		// 		);
+		// 	});
+		// }
 
 		return [products, count];
 	}
