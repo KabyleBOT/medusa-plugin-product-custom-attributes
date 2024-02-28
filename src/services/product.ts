@@ -47,74 +47,96 @@ class ProductService extends MedusaProductService {
 	}
 
 	private async decorateProductWithAttributesValues(
-		product
+		product: Product
 	) {
-		const attributesMap = new Map<
-			String,
-			Omit<
-				Attribute,
-				"beforeInsert"
-			> & {
-				values?: AttributeValue[];
-				int_values?: IntAttributeValue[];
-			}
-		>();
-		product.custom_attributes.forEach(
-			(attribute) => {
-				attribute.values.forEach(
-					(av) => {
-						const valueWithoutAttribute =
-							av;
-						// if (!attribute?.id) return;
-						if (
-							!attributesMap.has(
-								attribute?.id
-							)
-						) {
-							attributesMap.set(
-								attribute?.id,
-								{
-									...attribute,
-									values: [
-										valueWithoutAttribute as AttributeValue,
-									],
-								}
-							);
-						} else {
-							attributesMap
-								.get(attribute?.id)
-								.values.push(
-									valueWithoutAttribute as AttributeValue
-								);
-						}
-					}
-				);
+		// Fetch attribute values and int attribute values related to this product
+		const attributeValues =
+			await this.attributeValueRepository_
+				.createQueryBuilder("av")
+				.leftJoin(
+					"av.products",
+					"product"
+				)
+				.where(
+					"product.id = :productId",
+					{ productId: product.id }
+				)
+				.leftJoinAndSelect(
+					"av.attribute",
+					"attribute"
+				)
+				.getMany();
 
-				attribute.int_values.forEach(
-					(av) => {
-						const valueWithoutAttribute =
-							av;
-						// if (!attribute?.id) return;
-						attributesMap.set(
-							attribute?.id,
-							{
-								...attribute,
-								int_values: [
-									valueWithoutAttribute as IntAttributeValue,
-								],
-							}
-						);
-					}
+		const intAttributeValues =
+			await this.intAttributeValueRepository
+				.createQueryBuilder("iav")
+				.leftJoin(
+					"iav.products",
+					"product"
+				)
+				.where(
+					"product.id = :productId",
+					{ productId: product.id }
+				)
+				.leftJoinAndSelect(
+					"iav.attribute",
+					"attribute"
+				)
+				.getMany();
+
+		// Aggregate the fetched values by their attributes
+		const attributesMap = new Map<
+			string,
+			any
+		>();
+		attributeValues.forEach((av) => {
+			let attr = attributesMap.get(
+				av.attribute.id
+			);
+			if (!attr) {
+				attr = {
+					...av.attribute,
+					values: [],
+					int_values: [],
+				};
+				attributesMap.set(
+					av.attribute.id,
+					attr
 				);
+			}
+			attr.values.push(av);
+		});
+
+		intAttributeValues.forEach(
+			(iav) => {
+				let attr = attributesMap.get(
+					iav.attribute.id
+				);
+				if (!attr) {
+					attr = {
+						...iav.attribute,
+						values: [],
+						int_values: [],
+					};
+					attributesMap.set(
+						iav.attribute.id,
+						attr
+					);
+				}
+				attr.int_values.push(iav);
 			}
 		);
 
+		// Assign the aggregated attributes back to the product
 		product.custom_attributes =
 			Array.from(
 				attributesMap.values()
-			) as Attribute[];
+			);
 
-		return product;
+		console.log(
+			"product.custom_attributes:",
+			product.custom_attributes
+		);
 	}
 
 	async retrieveByHandle(
