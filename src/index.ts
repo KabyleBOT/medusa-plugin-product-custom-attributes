@@ -11,7 +11,7 @@ declare module "@medusajs/medusa/dist/models/product" {
 			"beforeInsert"
 		> & {
 			values?: AttributeValue[];
-			value?: IntAttributeValue;
+			int_values?: IntAttributeValue[];
 		})[];
 	}
 }

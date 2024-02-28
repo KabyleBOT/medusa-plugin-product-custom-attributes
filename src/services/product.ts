@@ -69,7 +69,7 @@ class ProductService extends MedusaProductService {
 				"beforeInsert"
 			> & {
 				values?: AttributeValue[];
-				value?: IntAttributeValue;
+				int_values?: IntAttributeValue[];
 			}
 		>();
 
@@ -115,8 +115,9 @@ class ProductService extends MedusaProductService {
 					attribute?.id,
 					{
 						...attribute,
-						value:
+						int_values: [
 							valueWithoutAttribute as IntAttributeValue,
+						],
 					}
 				);
 			}

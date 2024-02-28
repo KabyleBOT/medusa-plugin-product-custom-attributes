@@ -9,9 +9,11 @@ export default async function () {
 			"attribute_values.attribute",
 			"int_attribute_values",
 			"int_attribute_values.attribute",
+			"custom_attributes",
 		];
-	imports.defaultStoreProductsFields = [
-		...imports.defaultStoreProductsFields,
-		"custom_attributes",
-	];
+	imports.defaultStoreProductsRelations =
+		[
+			...imports.defaultStoreProductsRelations,
+			"custom_attributes",
+		];
 }
