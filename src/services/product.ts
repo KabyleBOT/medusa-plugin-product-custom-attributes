@@ -46,75 +46,75 @@ class ProductService extends MedusaProductService {
 			container.intAttributeValueRepository;
 	}
 
-	private async decorateProductWithAttributes(
-		product: Product
-	) {
-		const attributesMap = new Map<
-			String,
-			Omit<
-				Attribute,
-				"beforeInsert"
-			> & {
-				values?: AttributeValue[];
-				value?: IntAttributeValue;
-			}
-		>();
+	// private async decorateProductWithAttributes(
+	// 	product: Product
+	// ) {
+	// 	const attributesMap = new Map<
+	// 		String,
+	// 		Omit<
+	// 			Attribute,
+	// 			"beforeInsert"
+	// 		> & {
+	// 			values?: AttributeValue[];
+	// 			value?: IntAttributeValue;
+	// 		}
+	// 	>();
 
-		product.attribute_values.forEach(
-			(av) => {
-				const {
-					attribute,
-					...valueWithoutAttribute
-				} = av;
-				// if (!attribute?.id) return;
-				if (
-					!attributesMap.has(
-						attribute?.id
-					)
-				) {
-					attributesMap.set(
-						attribute?.id,
-						{
-							...attribute,
-							values: [
-								valueWithoutAttribute as AttributeValue,
-							],
-						}
-					);
-				} else {
-					attributesMap
-						.get(attribute?.id)
-						.values.push(
-							valueWithoutAttribute as AttributeValue
-						);
-				}
-			}
-		);
+	// 	product.attribute_values.forEach(
+	// 		(av) => {
+	// 			const {
+	// 				attribute,
+	// 				...valueWithoutAttribute
+	// 			} = av;
+	// 			// if (!attribute?.id) return;
+	// 			if (
+	// 				!attributesMap.has(
+	// 					attribute?.id
+	// 				)
+	// 			) {
+	// 				attributesMap.set(
+	// 					attribute?.id,
+	// 					{
+	// 						...attribute,
+	// 						values: [
+	// 							valueWithoutAttribute as AttributeValue,
+	// 						],
+	// 					}
+	// 				);
+	// 			} else {
+	// 				attributesMap
+	// 					.get(attribute?.id)
+	// 					.values.push(
+	// 						valueWithoutAttribute as AttributeValue
+	// 					);
+	// 			}
+	// 		}
+	// 	);
 
-		product.int_attribute_values.forEach(
-			(av) => {
-				const {
-					attribute,
-					...valueWithoutAttribute
-				} = av;
-				if (!attribute?.id) return;
-				attributesMap.set(
-					attribute?.id,
-					{
-						...attribute,
-						value:
-							valueWithoutAttribute as IntAttributeValue,
-					}
-				);
-			}
-		);
+	// 	product.int_attribute_values.forEach(
+	// 		(av) => {
+	// 			const {
+	// 				attribute,
+	// 				...valueWithoutAttribute
+	// 			} = av;
+	// 			if (!attribute?.id) return;
+	// 			attributesMap.set(
+	// 				attribute?.id,
+	// 				{
+	// 					...attribute,
+	// 					value:
+	// 						valueWithoutAttribute as IntAttributeValue,
+	// 				}
+	// 			);
+	// 		}
+	// 	);
 
-		product.custom_attributes =
-			Array.from(
-				attributesMap.values()
-			);
-		return product;
-	}
+	// 	product.custom_attributes =
+	// 		Array.from(
+	// 			attributesMap.values()
+	// 		);
+	// 	return product;
+	// }
 
 	async retrieve(
 		productId: string,
@@ -183,12 +183,14 @@ class ProductService extends MedusaProductService {
 				update
 			);
 
-		const decoratedProductWithAttributes =
-			this.decorateProductWithAttributes(
-				updatedProduct
-			);
+		return updatedProduct;
 
-		return decoratedProductWithAttributes;
+		// const decoratedProductWithAttributes =
+		// 	this.decorateProductWithAttributes(
+		// 		updatedProduct
+		// 	);
+
+		// return decoratedProductWithAttributes;
 	}
 
 	async listAndCount(
