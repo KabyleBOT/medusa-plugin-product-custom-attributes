@@ -14,9 +14,9 @@ import { FindWithoutRelationsOptions } from "@medusajs/medusa/dist/repositories/
 import { applyOrdering } from "@medusajs/medusa/dist/utils/repository";
 import { cloneDeep } from "lodash";
 import { Brackets } from "typeorm";
-import { IntAttributeValue } from "../models/int-attribute-value";
-import { AttributeValue } from "../models/attribute-value";
-import { Attribute } from "../models/attribute";
+// import { IntAttributeValue } from "../models/int-attribute-value";
+// import { AttributeValue } from "../models/attribute-value";
+// import { Attribute } from "../models/attribute";
 
 type InjectedDependencies = {
 	productRepository: typeof ProductRepository;
