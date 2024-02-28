@@ -225,11 +225,20 @@ const CustomAttributes = ({
 
 		mutate({
 			// @ts-ignore
-			attribute_values:
-				customAttributes?.values,
+			attribute_values: customAttributes
+				.map(
+					(attribute) =>
+						attribute.values
+				)
+				.flat() as AttributeValue[],
 			int_attribute_values:
 				// @ts-ignore
-				customAttributes?.int_values,
+				customAttributes
+					?.map(
+						(attribute) =>
+							attribute.int_values
+					)
+					.flat() as IntAttributeValue[],
 			custom_attributes:
 				customAttributes,
 		});
