@@ -1,4 +1,5 @@
 import {
+	Column,
 	// Column,
 	Entity,
 	JoinTable,
@@ -37,4 +38,10 @@ export class Product extends MedusaProduct {
 	// 	},
 	// })
 	// custom_attributes: any[];
+
+	@Column({
+		type: "jsonb",
+		nullable: true,
+	})
+	custom_attributes: any[];
 }
