@@ -9,8 +9,8 @@ export default async function () {
 			"attribute_values.attribute",
 			"int_attribute_values",
 			"int_attribute_values.attribute",
-			"custom_attributes",
-			"custom_attributes.values",
-			"custom_attributes.int_values",
+			// "custom_attributes",
+			// "custom_attributes.values",
+			// "custom_attributes.int_values",
 		];
 }
