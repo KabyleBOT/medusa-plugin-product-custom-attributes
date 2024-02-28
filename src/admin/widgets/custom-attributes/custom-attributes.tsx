@@ -202,14 +202,22 @@ const CustomAttributes = ({
 									)
 								);
 							} else if (
-								typeof val ===
-									"boolean" ||
-								val
+								typeof val === "boolean"
 							) {
-								// Booleans and other truthy values are processed here for values
-								customAttribute.values.push(
-									{ id: val }
-								);
+								if (val) {
+									const findAttributeValue =
+										attributes.find(
+											(it) =>
+												it.id === key
+										);
+
+									customAttribute.values.push(
+										{
+											id: findAttributeValue
+												.values[0].id,
+										}
+									);
+								}
 							}
 						}
 					}
