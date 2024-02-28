@@ -126,18 +126,18 @@ class ProductService extends MedusaProductService {
 				productHandle,
 				config
 			);
-		if (
-			config?.relations?.includes(
-				"custom_attributes.values"
-			) ||
-			config?.relations?.includes(
-				"custom_attributes.int_values"
-			)
-		) {
-			await this.decorateProductWithAttributesValues(
-				product
-			);
-		}
+		// if (
+		// 	config?.relations?.includes(
+		// 		"custom_attributes.values"
+		// 	) ||
+		// 	config?.relations?.includes(
+		// 		"custom_attributes.int_values"
+		// 	)
+		// ) {
+		// 	await this.decorateProductWithAttributesValues(
+		// 		product
+		// 	);
+		// }
 
 		return product;
 	}
@@ -151,18 +151,18 @@ class ProductService extends MedusaProductService {
 				productId,
 				config
 			);
-		if (
-			config?.relations?.includes(
-				"custom_attributes.values"
-			) ||
-			config?.relations?.includes(
-				"custom_attributes.int_values"
-			)
-		) {
-			await this.decorateProductWithAttributesValues(
-				product
-			);
-		}
+		// if (
+		// 	config?.relations?.includes(
+		// 		"custom_attributes.values"
+		// 	) ||
+		// 	config?.relations?.includes(
+		// 		"custom_attributes.int_values"
+		// 	)
+		// ) {
+		// 	await this.decorateProductWithAttributesValues(
+		// 		product
+		// 	);
+		// }
 
 		return product;
 	}
@@ -208,7 +208,12 @@ class ProductService extends MedusaProductService {
 				update
 			);
 
-		return updatedProduct;
+		const decoratedProduct =
+			await this.decorateProductWithAttributesValues(
+				updatedProduct
+			);
+
+		return decoratedProduct;
 	}
 
 	async listAndCount(
@@ -295,22 +300,22 @@ class ProductService extends MedusaProductService {
 				products
 			);
 		}
-		if (
-			config?.relations?.includes(
-				"custom_attributes.values"
-			) ||
-			config?.relations?.includes(
-				"custom_attributes.int_values"
-			)
-		) {
-			products.forEach(
-				async (product) => {
-					await this.decorateProductWithAttributesValues(
-						product
-					);
-				}
-			);
-		}
+		// if (
+		// 	config?.relations?.includes(
+		// 		"custom_attributes.values"
+		// 	) ||
+		// 	config?.relations?.includes(
+		// 		"custom_attributes.int_values"
+		// 	)
+		// ) {
+		// 	products.forEach(
+		// 		async (product) => {
+		// 			await this.decorateProductWithAttributesValues(
+		// 				product
+		// 			);
+		// 		}
+		// 	);
+		// }
 
 		return [products, count];
 	}
