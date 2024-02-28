@@ -230,8 +230,8 @@ const CustomAttributes = ({
 			int_attribute_values:
 				// @ts-ignore
 				customAttributes?.int_values,
-			// custom_attributes:
-			// 	customAttributes,
+			custom_attributes:
+				customAttributes,
 		});
 	};
 

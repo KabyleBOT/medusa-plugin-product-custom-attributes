@@ -46,22 +46,9 @@ class ProductService extends MedusaProductService {
 			container.intAttributeValueRepository;
 	}
 
-	private async decorateProductWithAttributes(
-		productId: Product["id"],
-		config?: FindProductConfig
+	private async decorateProductWithAttributesValues(
+		product
 	) {
-		const product =
-			await super.retrieve(productId, {
-				...config,
-				relations: [
-					...(config?.relations || []),
-					"attribute_values",
-					"attribute_values.attribute",
-					"int_attribute_values",
-					"int_attribute_values.attribute",
-				],
-			});
-
 		const attributesMap = new Map<
 			String,
 			Omit<
@@ -72,52 +59,51 @@ class ProductService extends MedusaProductService {
 				int_values?: IntAttributeValue[];
 			}
 		>();
-
-		product.attribute_values.forEach(
-			(av) => {
-				const {
-					attribute,
-					...valueWithoutAttribute
-				} = av;
-				// if (!attribute?.id) return;
-				if (
-					!attributesMap.has(
-						attribute?.id
-					)
-				) {
-					attributesMap.set(
-						attribute?.id,
-						{
-							...attribute,
-							values: [
-								valueWithoutAttribute as AttributeValue,
-							],
+		product.custom_attributes.forEach(
+			(attribute) => {
+				attribute.values.forEach(
+					(av) => {
+						const valueWithoutAttribute =
+							av;
+						// if (!attribute?.id) return;
+						if (
+							!attributesMap.has(
+								attribute?.id
+							)
+						) {
+							attributesMap.set(
+								attribute?.id,
+								{
+									...attribute,
+									values: [
+										valueWithoutAttribute as AttributeValue,
+									],
+								}
+							);
+						} else {
+							attributesMap
+								.get(attribute?.id)
+								.values.push(
+									valueWithoutAttribute as AttributeValue
+								);
 						}
-					);
-				} else {
-					attributesMap
-						.get(attribute?.id)
-						.values.push(
-							valueWithoutAttribute as AttributeValue
-						);
-				}
-			}
-		);
+					}
+				);
 
-		product.int_attribute_values.forEach(
-			(av) => {
-				const {
-					attribute,
-					...valueWithoutAttribute
-				} = av;
-				// if (!attribute?.id) return;
-				attributesMap.set(
-					attribute?.id,
-					{
-						...attribute,
-						int_values: [
-							valueWithoutAttribute as IntAttributeValue,
-						],
+				attribute.int_values.forEach(
+					(av) => {
+						const valueWithoutAttribute =
+							av;
+						// if (!attribute?.id) return;
+						attributesMap.set(
+							attribute?.id,
+							{
+								...attribute,
+								int_values: [
+									valueWithoutAttribute as IntAttributeValue,
+								],
+							}
+						);
 					}
 				);
 			}
@@ -136,10 +122,22 @@ class ProductService extends MedusaProductService {
 		config?: FindProductConfig
 	): Promise<Product> {
 		const product =
-			await this.decorateProductWithAttributes(
+			await super.retrieve(
 				productId,
 				config
 			);
+		if (
+			config?.relations?.includes(
+				"custom_attributes.values"
+			) ||
+			config?.relations?.includes(
+				"custom_attributes.int_values"
+			)
+		) {
+			await this.decorateProductWithAttributesValues(
+				product
+			);
+		}
 
 		return product;
 	}
@@ -272,14 +270,22 @@ class ProductService extends MedusaProductService {
 				products
 			);
 		}
-
-		products.forEach(
-			async (product) => {
-				await this.decorateProductWithAttributes(
-					product.id
-				);
-			}
-		);
+		if (
+			config?.relations?.includes(
+				"custom_attributes.values"
+			) ||
+			config?.relations?.includes(
+				"custom_attributes.int_values"
+			)
+		) {
+			products.forEach(
+				async (product) => {
+					await this.decorateProductWithAttributesValues(
+						product
+					);
+				}
+			);
+		}
 
 		return [products, count];
 	}
