@@ -16,8 +16,5 @@ export default async function () {
 	imports.defaultStoreProductsRelations =
 		[
 			...imports.defaultStoreProductsRelations,
-			"custom_attributes",
-			"custom_attributes.values",
-			"custom_attributes.int_values",
 		];
 }
