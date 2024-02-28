@@ -167,13 +167,14 @@ const CustomAttributes = ({
 			.map((attribute) => {
 				// Initialize empty structure for each attribute
 				const customAttribute: {
+					id: string;
 					values: Array<{ id: string }>;
 					int_values: Array<{
 						value: number;
 						attribute_id: string;
 					}>;
 				} = {
-					...attribute,
+					id: attribute.id,
 					values: [],
 					int_values: [],
 				};
