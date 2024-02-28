@@ -74,12 +74,12 @@ export class Attribute extends BaseEntity {
 	)
 	int_values: IntAttributeValue[];
 
-	@ManyToMany(
-		() => Product,
-		(product) =>
-			product.custom_attributes
-	)
-	products: Product[];
+	// @ManyToMany(
+	// 	() => Product,
+	// 	(product) =>
+	// 		product.custom_attributes
+	// )
+	// products: Product[];
 
 	@BeforeInsert()
 	private beforeInsert(): void {

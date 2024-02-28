@@ -70,22 +70,22 @@ class AdminIntAttributeValueReq {
 	attribute_id: string;
 }
 
-class AdminCustomAttributeReq {
-	@IsString()
-	id: string;
+// class AdminCustomAttributeReq {
+// 	@IsString()
+// 	id: string;
 
-	@IsOptional()
-	@Type(() => AdminIntAttributeValueReq)
-	@ValidateNested({ each: true })
-	@IsArray()
-	int_values: AdminIntAttributeValueReq[];
+// 	@IsOptional()
+// 	@Type(() => AdminIntAttributeValueReq)
+// 	@ValidateNested({ each: true })
+// 	@IsArray()
+// 	int_values: AdminIntAttributeValueReq[];
 
-	@IsOptional()
-	@Type(() => AdminAttributeValueReq)
-	@ValidateNested({ each: true })
-	@IsArray()
-	values: AdminAttributeValueReq[];
-}
+// 	@IsOptional()
+// 	@Type(() => AdminAttributeValueReq)
+// 	@ValidateNested({ each: true })
+// 	@IsArray()
+// 	values: AdminAttributeValueReq[];
+// }
 
 class AdminPostProductsProductReq extends MedusaAdminPostProductsProductReq {
 	@IsOptional()
@@ -100,11 +100,11 @@ class AdminPostProductsProductReq extends MedusaAdminPostProductsProductReq {
 	@IsArray()
 	attribute_values: AdminAttributeValueReq[];
 
-	@IsOptional()
-	@Type(() => AdminCustomAttributeReq)
-	@ValidateNested({ each: true })
-	@IsArray()
-	custom_attributes: AdminCustomAttributeReq[];
+	// @IsOptional()
+	// @Type(() => AdminCustomAttributeReq)
+	// @ValidateNested({ each: true })
+	// @IsArray()
+	// custom_attributes: AdminCustomAttributeReq[];
 }
 
 export type IntAttributeParam = Record<
