@@ -117,6 +117,31 @@ class ProductService extends MedusaProductService {
 		return product;
 	}
 
+	async retrieveByHandle(
+		productHandle: string,
+		config?: FindProductConfig
+	): Promise<Product> {
+		const product =
+			await super.retrieveByHandle(
+				productHandle,
+				config
+			);
+		if (
+			config?.relations?.includes(
+				"custom_attributes.values"
+			) ||
+			config?.relations?.includes(
+				"custom_attributes.int_values"
+			)
+		) {
+			await this.decorateProductWithAttributesValues(
+				product
+			);
+		}
+
+		return product;
+	}
+
 	async retrieve(
 		productId: string,
 		config?: FindProductConfig
