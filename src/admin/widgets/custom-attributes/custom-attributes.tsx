@@ -218,6 +218,14 @@ const CustomAttributes = ({
 										}
 									);
 								}
+							} else {
+								if (val) {
+									customAttribute.values.push(
+										{
+											id: val,
+										}
+									);
+								}
 							}
 						}
 					}
