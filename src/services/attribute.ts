@@ -190,7 +190,6 @@ class AttributeService extends TransactionBaseService {
 
 		Object.keys(data).forEach(
 			async (update) => {
-				console.log("update", update);
 				if (update === "categories") {
 					const categories = data[
 						update
@@ -212,12 +211,6 @@ class AttributeService extends TransactionBaseService {
 						update
 					].map(async (v) => {
 						if (!v?.id) {
-							console.log(
-								"value without id",
-								v
-							);
-							// use the create method to create a new value
-
 							const createdValue =
 								attributeValueRepo.create(
 									{
@@ -233,11 +226,6 @@ class AttributeService extends TransactionBaseService {
 									`Couldn't create "Attribute Value" with value ${v?.value}`
 								);
 							}
-
-							console.log(
-								"createdValue",
-								createdValue
-							);
 
 							return await attributeValueRepo.save(
 								createdValue
@@ -262,33 +250,6 @@ class AttributeService extends TransactionBaseService {
 			}
 		);
 
-		// delete retrievedAttribute.id;
-
-		// const createdAttribute =
-		// 	attributeRepo.create(
-		// 		retrievedAttribute
-		// 	);
-
-		// const duplicate =
-		// 	await attributeRepo.findOne({
-		// 		where: {
-		// 			handle:
-		// 				createdAttribute.handle,
-		// 			id: Not(id),
-		// 		},
-		// 	});
-
-		// if (duplicate) {
-		// 	throw new MedusaError(
-		// 		MedusaError.Types.CONFLICT,
-		// 		`"Attribute" with handle ${duplicate.handle} already exists`
-		// 	);
-		// }
-
-		// return await attributeRepo.save({
-		// 	...createdAttribute,
-		// 	id,
-		// });
 		return await attributeRepo.save(
 			retrievedAttribute
 		);
