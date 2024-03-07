@@ -186,14 +186,15 @@ class AttributeService extends TransactionBaseService {
 					].map((c) => ({ id: c }));
 
 					// @ts-ignore
-					attribute["categories"] =
-						categories;
+					retrievedAttribute[
+						"categories"
+					] = categories;
 					//  probleme here
 					// return;
 					//  why we are returning if the update contains categories
 					// we should just update the categories and continue
 					// making sure that the categories in the update are deleted
-					delete update["categories"];
+					delete data[update];
 				}
 
 				retrievedAttribute[update] =
