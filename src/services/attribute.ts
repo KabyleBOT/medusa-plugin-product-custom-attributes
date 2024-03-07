@@ -40,7 +40,7 @@ class AttributeService extends TransactionBaseService {
 		this.productCategoryRepository_ =
 			productCategoryRepository;
 		this.attributeValueRepository_ =
-			AttributeValueRepository;
+			attributeValueRepository;
 	}
 
 	async create(
@@ -190,6 +190,7 @@ class AttributeService extends TransactionBaseService {
 
 		Object.keys(data).forEach(
 			(update) => {
+				console.log("update", update);
 				if (update === "categories") {
 					const categories = data[
 						update
@@ -211,11 +212,20 @@ class AttributeService extends TransactionBaseService {
 						update
 					].map((v) => {
 						if (!v?.id) {
+							console.log(
+								"value without id",
+								v
+							);
 							// use the create method to create a new value
 
 							const createdValue =
 								attributeValueRepo.create(
-									v
+									{
+										...v,
+										attribute_id: id,
+										attribute:
+											retrievedAttribute,
+									}
 								);
 
 							return createdValue;
