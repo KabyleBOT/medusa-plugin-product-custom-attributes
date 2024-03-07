@@ -199,50 +199,76 @@ class AttributeService extends TransactionBaseService {
 					retrievedAttribute[
 						"categories"
 					] = categories;
-					//  probleme here
-					// return;
-					//  why we are returning if the update contains categories
-					// we should just update the categories and continue
-					// making sure that the categories in the update are deleted
-					delete data[update];
+
+					delete data["categories"];
 				}
 				if (update === "values") {
-					const promisedValues = data[
-						update
-					].map(async (v) => {
-						if (!v?.id) {
-							const createdValue =
-								attributeValueRepo.create(
-									{
-										...v,
-										attribute:
-											retrievedAttribute,
+					const newValues =
+						data[update];
+
+					const promisedValuesToUpdate =
+						newValues?.map(
+							async (v) => {
+								if (!v?.id) {
+									const createdValue =
+										attributeValueRepo.create(
+											{
+												...v,
+												attribute:
+													retrievedAttribute,
+											}
+										);
+
+									if (!createdValue) {
+										throw new MedusaError(
+											MedusaError.Types.NOT_FOUND,
+											`Couldn't create "Attribute Value" with value ${v?.value}`
+										);
 									}
-								);
 
-							if (!createdValue) {
-								throw new MedusaError(
-									MedusaError.Types.NOT_FOUND,
-									`Couldn't create "Attribute Value" with value ${v?.value}`
-								);
+									return await attributeValueRepo.save(
+										createdValue
+									);
+								}
+								return v;
 							}
-
-							return await attributeValueRepo.save(
-								createdValue
-							);
-						}
-						return v;
-					});
-
-					const values =
-						await Promise.all(
-							promisedValues
 						);
 
-					retrievedAttribute[update] =
-						values;
+					const valuesToUpdate =
+						await Promise.all(
+							promisedValuesToUpdate
+						);
 
-					delete data[update];
+					const oldValues =
+						retrievedAttribute?.values ||
+						[];
+
+					const valuesToDelete =
+						oldValues?.filter(
+							(oldValue) =>
+								!valuesToUpdate?.find(
+									(valueToUpdate) =>
+										valueToUpdate.id ===
+										oldValue.id
+								)
+						);
+
+					if (valuesToDelete?.length) {
+						const ids =
+							valuesToDelete?.map(
+								(toDeleteValue) =>
+									toDeleteValue?.id
+							);
+
+						await attributeValueRepo.delete(
+							ids
+						);
+					}
+
+					retrievedAttribute[update] =
+						valuesToUpdate;
+
+					delete data["values"];
 				}
 
 				retrievedAttribute[update] =
