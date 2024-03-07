@@ -13,6 +13,8 @@ import { MedusaError } from "medusa-core-utils";
 import { AdminPostAttributeReq } from "../api/attribute/create-attribute";
 import ProductCategoryRepository from "../repositories/product-category";
 import { AdminListAttributesParams } from "../api/attribute/list-attributes";
+import AttributeValueRepository from "../repositories/attribute-value";
+import IntAttributeValueRepository from "../repositories/int-attribute-value";
 
 type InjectedDependencies = {
 	manager: EntityManager;
@@ -26,6 +28,7 @@ export const defaultAttributeRelations =
 class AttributeService extends TransactionBaseService {
 	protected readonly attributeRepository_: typeof AttributeRepository;
 	protected readonly productCategoryRepository_: typeof ProductCategoryRepository;
+	protected readonly attributeValueRepository_: typeof AttributeValueRepository;
 
 	constructor({
 		attributeRepository,
@@ -168,6 +171,11 @@ class AttributeService extends TransactionBaseService {
 				this.attributeRepository_
 			);
 
+		const attributeValueRepo =
+			this.activeManager_.withRepository(
+				this.attributeValueRepository_
+			);
+
 		const retrievedAttribute =
 			await this.retrieve(id);
 
@@ -194,6 +202,27 @@ class AttributeService extends TransactionBaseService {
 					//  why we are returning if the update contains categories
 					// we should just update the categories and continue
 					// making sure that the categories in the update are deleted
+					delete data[update];
+				}
+				if (update === "values") {
+					const values = data[
+						update
+					].map((v) => {
+						if (!v?.id) {
+							// use the create method to create a new value
+
+							const createdValue =
+								attributeValueRepo.create(
+									v
+								);
+
+							return createdValue;
+						}
+						return v;
+					});
+
+					retrievedAttribute[update] =
+						values;
 					delete data[update];
 				}
 
