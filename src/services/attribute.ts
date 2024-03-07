@@ -200,7 +200,8 @@ class AttributeService extends TransactionBaseService {
 						"categories"
 					] = categories;
 
-					delete data["categories"];
+					// delete data["categories"];
+					return;
 				}
 				if (update === "values") {
 					const newValues =
@@ -260,15 +261,21 @@ class AttributeService extends TransactionBaseService {
 									toDeleteValue?.id
 							);
 
+						console.log(
+							"ids to delete",
+							ids
+						);
+
 						await attributeValueRepo.delete(
 							ids
 						);
 					}
 
-					retrievedAttribute[update] =
+					retrievedAttribute["values"] =
 						valuesToUpdate;
 
-					delete data["values"];
+					// delete data["values"];
+					return;
 				}
 
 				retrievedAttribute[update] =
