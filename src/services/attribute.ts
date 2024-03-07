@@ -189,7 +189,7 @@ class AttributeService extends TransactionBaseService {
 		}
 
 		Object.keys(data).forEach(
-			(update) => {
+			async (update) => {
 				console.log("update", update);
 				if (update === "categories") {
 					const categories = data[
@@ -208,9 +208,9 @@ class AttributeService extends TransactionBaseService {
 					delete data[update];
 				}
 				if (update === "values") {
-					const values = data[
+					const promisedValues = data[
 						update
-					].map((v) => {
+					].map(async (v) => {
 						if (!v?.id) {
 							console.log(
 								"value without id",
@@ -222,24 +222,38 @@ class AttributeService extends TransactionBaseService {
 								attributeValueRepo.create(
 									{
 										...v,
-										attribute_id: id,
 										attribute:
 											retrievedAttribute,
 									}
 								);
+
+							if (!createdValue) {
+								throw new MedusaError(
+									MedusaError.Types.NOT_FOUND,
+									`Couldn't create "Attribute Value" with value ${v?.value}`
+								);
+							}
 
 							console.log(
 								"createdValue",
 								createdValue
 							);
 
-							return createdValue;
+							return await attributeValueRepo.save(
+								createdValue
+							);
 						}
 						return v;
 					});
 
+					const values =
+						await Promise.all(
+							promisedValues
+						);
+
 					retrievedAttribute[update] =
 						values;
+
 					delete data[update];
 				}
 
