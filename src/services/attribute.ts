@@ -1,25 +1,24 @@
 import { TransactionBaseService } from "@medusajs/medusa";
-import { Attribute } from "../models/attribute";
-import { AttributeRepository } from "../repositories/attribute";
+import { MedusaError } from "medusa-core-utils";
 import {
 	EntityManager,
 	FindManyOptions,
 	FindOneOptions,
 	In,
 	IsNull,
-	Not,
 } from "typeorm";
-import { MedusaError } from "medusa-core-utils";
 import { AdminPostAttributeReq } from "../api/attribute/create-attribute";
-import ProductCategoryRepository from "../repositories/product-category";
 import { AdminListAttributesParams } from "../api/attribute/list-attributes";
+import { Attribute } from "../models/attribute";
+import { AttributeRepository } from "../repositories/attribute";
 import AttributeValueRepository from "../repositories/attribute-value";
-import IntAttributeValueRepository from "../repositories/int-attribute-value";
+import ProductCategoryRepository from "../repositories/product-category";
 
 type InjectedDependencies = {
 	manager: EntityManager;
 	attributeRepository: typeof AttributeRepository;
 	productCategoryRepository: typeof ProductCategoryRepository;
+	attributeValueRepository: typeof AttributeValueRepository;
 };
 
 export const defaultAttributeRelations =
@@ -33,12 +32,15 @@ class AttributeService extends TransactionBaseService {
 	constructor({
 		attributeRepository,
 		productCategoryRepository,
+		attributeValueRepository,
 	}: InjectedDependencies) {
 		super(arguments[0]);
 		this.attributeRepository_ =
 			attributeRepository;
 		this.productCategoryRepository_ =
 			productCategoryRepository;
+		this.attributeValueRepository_ =
+			AttributeValueRepository;
 	}
 
 	async create(
