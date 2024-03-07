@@ -228,6 +228,11 @@ class AttributeService extends TransactionBaseService {
 									}
 								);
 
+							console.log(
+								"createdValue",
+								createdValue
+							);
+
 							return createdValue;
 						}
 						return v;
