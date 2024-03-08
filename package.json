@@ -1,6 +1,6 @@
 {
 	"name": "medusa-custom-attributes-ghilas",
-	"version": "1.2.4",
+	"version": "1.2.5",
 	"description": "Custom attributes plugin for Medusa ghilas-backstore",
 	"main": "index.js",
 	"author": "Khaled Belkouche <khaled.belkouche@assalas.com>",

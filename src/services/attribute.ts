@@ -226,10 +226,7 @@ export class AttributeService extends TransactionBaseService {
 				const oldValues =
 					retrievedAttribute?.values ||
 					[];
-				console.log(
-					"oldValues in retrieved attribute:",
-					oldValues
-				);
+
 				const valuesToDelete =
 					oldValues.filter(
 						(oldValue) =>
@@ -239,11 +236,6 @@ export class AttributeService extends TransactionBaseService {
 									oldValue.id
 							)
 					);
-
-				console.log(
-					"valuesToDelete before delete:",
-					valuesToDelete
-				);
 
 				if (valuesToDelete.length) {
 					const idsToDelete =
@@ -255,11 +247,6 @@ export class AttributeService extends TransactionBaseService {
 					);
 				}
 
-				console.log(
-					"valuesToUpdate before setting to retrievedAttribute",
-					valuesToUpdate
-				);
-
 				retrievedAttribute.values =
 					valuesToUpdate;
 			} else {
@@ -267,18 +254,12 @@ export class AttributeService extends TransactionBaseService {
 					data[update];
 			}
 		}
-		console.log(
-			"retrievedAttribute just before save to db:",
-			retrievedAttribute
-		);
+
 		const savedAttributeToDb =
 			await attributeRepo.save(
 				retrievedAttribute
 			);
-		console.log(
-			"savedAttributeToDb after save to db:",
-			savedAttributeToDb
-		);
+
 		return savedAttributeToDb;
 	}
 
