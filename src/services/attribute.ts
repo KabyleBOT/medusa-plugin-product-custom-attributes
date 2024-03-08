@@ -24,7 +24,7 @@ type InjectedDependencies = {
 export const defaultAttributeRelations =
 	["values", "categories"];
 
-class AttributeService extends TransactionBaseService {
+export class AttributeService extends TransactionBaseService {
 	protected readonly attributeRepository_: typeof AttributeRepository;
 	protected readonly productCategoryRepository_: typeof ProductCategoryRepository;
 	protected readonly attributeValueRepository_: typeof AttributeValueRepository;
@@ -172,7 +172,6 @@ class AttributeService extends TransactionBaseService {
 			this.activeManager_.withRepository(
 				this.attributeRepository_
 			);
-
 		const attributeValueRepo =
 			this.activeManager_.withRepository(
 				this.attributeValueRepository_
@@ -188,104 +187,96 @@ class AttributeService extends TransactionBaseService {
 			);
 		}
 
-		Object.keys(data).forEach(
-			async (update) => {
-				if (update === "categories") {
-					const categories = data[
-						update
-					].map((c) => ({ id: c }));
+		for (const update of Object.keys(
+			data
+		)) {
+			if (update === "categories") {
+				const categories = data[
+					update
+				].map((c) => ({ id: c }));
+				// @ts-ignore
+				retrievedAttribute[
+					"categories"
+				] = categories;
+			} else if (update === "values") {
+				const newValues = data[update];
+				const valuesToUpdate = [];
 
-					// @ts-ignore
-					retrievedAttribute[
-						"categories"
-					] = categories;
-
-					// delete data["categories"];
-					return;
-				}
-				if (update === "values") {
-					const newValues =
-						data[update];
-
-					const promisedValuesToUpdate =
-						newValues?.map(
-							async (v) => {
-								if (!v?.id) {
-									const createdValue =
-										attributeValueRepo.create(
-											{
-												...v,
-												attribute:
-													retrievedAttribute,
-											}
-										);
-
-									if (!createdValue) {
-										throw new MedusaError(
-											MedusaError.Types.NOT_FOUND,
-											`Couldn't create "Attribute Value" with value ${v?.value}`
-										);
-									}
-
-									return await attributeValueRepo.save(
-										createdValue
-									);
-								}
-								return v;
-							}
-						);
-
-					const valuesToUpdate =
-						await Promise.all(
-							promisedValuesToUpdate
-						);
-
-					const oldValues =
-						retrievedAttribute?.values ||
-						[];
-
-					const valuesToDelete =
-						oldValues?.filter(
-							(oldValue) =>
-								!valuesToUpdate?.find(
-									(valueToUpdate) =>
-										valueToUpdate.id ===
-										oldValue.id
-								)
-						);
-
-					if (valuesToDelete?.length) {
-						const ids =
-							valuesToDelete?.map(
-								(toDeleteValue) =>
-									toDeleteValue?.id
+				for (const v of newValues) {
+					if (!v?.id) {
+						const createdValue =
+							attributeValueRepo.create(
+								v
 							);
-
-						console.log(
-							"ids to delete",
-							ids
+						const savedValue =
+							await attributeValueRepo.save(
+								createdValue
+							);
+						valuesToUpdate.push(
+							savedValue
 						);
-
-						await attributeValueRepo.delete(
-							ids
-						);
+					} else {
+						valuesToUpdate.push(v);
 					}
-
-					retrievedAttribute["values"] =
-						valuesToUpdate;
-
-					// delete data["values"];
-					return;
 				}
 
+				const oldValues =
+					retrievedAttribute.values ||
+					[];
+				console.log(
+					"oldValues in retrieved attribute:",
+					oldValues
+				);
+				const valuesToDelete =
+					oldValues.filter(
+						(oldValue) =>
+							!valuesToUpdate.some(
+								(valueToUpdate) =>
+									valueToUpdate.id ===
+									oldValue.id
+							)
+					);
+
+				console.log(
+					"valuesToDelete before delete:",
+					valuesToDelete
+				);
+
+				if (valuesToDelete.length) {
+					const idsToDelete =
+						valuesToDelete.map(
+							(value) => value.id
+						);
+					await attributeValueRepo.delete(
+						idsToDelete
+					);
+				}
+
+				console.log(
+					"valuesToUpdate before setting to retrievedAttribute",
+					valuesToUpdate
+				);
+
+				retrievedAttribute.values =
+					valuesToUpdate;
+			} else {
 				retrievedAttribute[update] =
 					data[update];
 			}
-		);
-
-		return await attributeRepo.save(
+		}
+		console.log(
+			"retrievedAttribute just before save to db:",
 			retrievedAttribute
 		);
+		const savedAttributeToDb =
+			await attributeRepo.save(
+				retrievedAttribute
+			);
+		console.log(
+			"savedAttributeToDb after save to db:",
+			savedAttributeToDb
+		);
+		return savedAttributeToDb;
 	}
 
 	async delete(id: string) {
