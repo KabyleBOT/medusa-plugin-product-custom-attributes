@@ -178,7 +178,10 @@ export class AttributeService extends TransactionBaseService {
 			);
 
 		const retrievedAttribute =
-			await this.retrieve(id);
+			await this.retrieve(id, {
+				relations:
+					defaultAttributeRelations,
+			});
 
 		if (!retrievedAttribute) {
 			throw new MedusaError(
@@ -221,7 +224,7 @@ export class AttributeService extends TransactionBaseService {
 				}
 
 				const oldValues =
-					retrievedAttribute.values ||
+					retrievedAttribute?.values ||
 					[];
 				console.log(
 					"oldValues in retrieved attribute:",
