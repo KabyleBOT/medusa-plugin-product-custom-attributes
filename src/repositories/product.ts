@@ -1,4 +1,3 @@
-import { Product as MedusaProduct } from "@medusajs/medusa";
 import { dataSource } from "@medusajs/medusa/dist/loaders/database";
 import {
 	// alias the core repository to not cause a naming conflict
@@ -13,7 +12,7 @@ export const ProductRepository =
 			Object.assign(
 				MedusaProductRepository,
 				{
-					target: MedusaProduct,
+					target: Product,
 				}
 			)
 		);
