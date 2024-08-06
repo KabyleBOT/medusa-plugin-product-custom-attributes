@@ -5,6 +5,8 @@ import {
 } from "@medusajs/medusa/dist/repositories/product";
 import { Product } from "../models/product";
 
+// see https://github.com/medusajs/medusa/issues/6139
+
 export const ProductRepository =
 	dataSource
 		.getRepository(Product)
