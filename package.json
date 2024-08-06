@@ -1,6 +1,6 @@
 {
 	"name": "medusa-plugin-product-custom-attributes",
-	"version": "1.3.9",
+	"version": "1.3.10",
 	"description": "product custom attributes plugin for Medusa ghilas-backstore",
 	"main": "index.js",
 	"author": "Khaled Belkouche <khaled.belkouche@assalas.com>",
