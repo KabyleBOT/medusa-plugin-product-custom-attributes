@@ -18,7 +18,7 @@ import { IsValidIntAttributes } from "../util/validate-int-attributes";
 export default function route(
 	rootDirectory,
 	options
-) {
+): Router {
 	const route = Router();
 
 	route.use(bodyParser.json());
