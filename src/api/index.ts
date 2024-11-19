@@ -87,7 +87,7 @@ class AdminCustomAttributeReq {
 	values: AdminAttributeValueReq[];
 }
 
-class AdminPostProductsProductReq extends MedusaAdminPostProductsProductReq {
+export class AdminPostProductsProductReq extends MedusaAdminPostProductsProductReq {
 	@IsOptional()
 	@Type(() => AdminIntAttributeValueReq)
 	@ValidateNested({ each: true })
