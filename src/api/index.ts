@@ -15,10 +15,10 @@ import {
 } from "class-validator";
 import { IsValidIntAttributes } from "../util/validate-int-attributes";
 
-export default (
+export default function route(
 	rootDirectory,
 	options
-) => {
+) {
 	const route = Router();
 
 	route.use(bodyParser.json());
@@ -51,14 +51,14 @@ export default (
 	});
 
 	return route;
-};
+}
 
-class AdminAttributeValueReq {
+export class AdminAttributeValueReq {
 	@IsString()
 	id: string;
 }
 
-class AdminIntAttributeValueReq {
+export class AdminIntAttributeValueReq {
 	@IsOptional()
 	id: string;
 
@@ -70,7 +70,7 @@ class AdminIntAttributeValueReq {
 	attribute_id: string;
 }
 
-class AdminCustomAttributeReq {
+export class AdminCustomAttributeReq {
 	@IsString()
 	id: string;
 
